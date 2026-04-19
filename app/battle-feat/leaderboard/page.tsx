@@ -77,7 +77,7 @@ export default async function LeaderboardPage({
         </div>
       ) : (
         <div className="mt-7 space-y-2.5">
-          {sessions.map((s, i) => {
+          {sessions.map((s: (typeof sessions)[number], i: number) => {
             const moveCount = Array.isArray(s.moves) ? s.moves.length : 0;
             return (
               <Link
