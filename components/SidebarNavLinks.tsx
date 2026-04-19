@@ -7,13 +7,12 @@ import {
   CirclePlus,
   House,
   Library,
-  Play,
   Search,
   Settings,
   type LucideIcon,
 } from "lucide-react";
 
-type IconName = "home" | "search" | "create" | "library" | "battle" | "guide" | "settings";
+type IconName = "home" | "search" | "create" | "library" | "guide" | "settings";
 
 type NavItem = {
   href: string;
@@ -30,7 +29,6 @@ const iconMap: Record<IconName, LucideIcon> = {
   search: Search,
   create: CirclePlus,
   library: Library,
-  battle: Play,
   guide: BookOpen,
   settings: Settings,
 };
@@ -40,7 +38,7 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function SidebarNavLinks({ links }: SidebarNavLinksProps) {
+export default function SidebarNavLinks({ links }: Readonly<SidebarNavLinksProps>) {
   const pathname = usePathname();
 
   return (
@@ -55,9 +53,11 @@ export default function SidebarNavLinks({ links }: SidebarNavLinksProps) {
             href={href}
             className="flex items-center gap-3 rounded-2xl px-4 py-3 text-[1.02rem] transition"
             style={{
-              color: active ? "#09090b" : "#8f93a0",
-              background: active ? "#f3f4f6" : "transparent",
-              border: active ? "1px solid rgba(255,255,255,0.9)" : "1px solid transparent",
+              color: active ? "var(--foreground)" : "var(--muted-strong)",
+              background: active ? "var(--surface-2)" : "transparent",
+              border: active
+                ? "1px solid var(--border-strong)"
+                : "1px solid transparent",
             }}
           >
             <Icon size={18} strokeWidth={1.9} />
@@ -68,4 +68,5 @@ export default function SidebarNavLinks({ links }: SidebarNavLinksProps) {
     </div>
   );
 }
+
 

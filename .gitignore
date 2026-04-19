@@ -39,3 +39,30 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase (local dev)
+supabase/.branches
+supabase/.temp
+supabase/functions/*/deno.lock
+
+/lib/generated/prisma
+
+.env
+
+# IDE / editors
+.idea/
+.vscode/
+*.iml
+
+# Claude Code / agents
+.claude/
+.agents/
+.junie/
+skills-lock.json
+
+# Local test / dev files
+identifiants_seed.txt
+test-auth.js
+test-deezer-live.ts
+test-process.ts
+proxy.ts

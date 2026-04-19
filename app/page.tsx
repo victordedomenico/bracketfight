@@ -1,65 +1,163 @@
-import Image from "next/image";
+import Link from "next/link";
+import {
+  CirclePlus,
+  Library,
+  Play,
+  Trophy,
+} from "lucide-react";
+import { getI18n } from "@/lib/i18n";
 
-export default function Home() {
+export default async function Home() {
+  const { t } = await getI18n();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="space-y-4">
+      <section
+        className="relative overflow-hidden rounded-[36px] border px-6 py-12 text-center md:px-10 md:py-16 lg:px-20 lg:py-20"
+        style={{
+          borderColor: "var(--border-strong)",
+          background: "var(--surface)",
+          color: "var(--foreground)",
+        }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(900px 480px at 55% 10%, rgba(239,68,68,0.22) 0%, rgba(249,115,22,0.10) 45%, transparent 78%)",
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+        <div className="relative">
+          <p
+            className="mx-auto inline-flex rounded-full border px-5 py-2 text-[0.72rem] font-bold uppercase tracking-[0.2em]"
+            style={{
+              color: "#ff4b7d",
+              borderColor: "rgba(255,75,125,0.35)",
+              background: "rgba(255,75,125,0.12)",
+            }}
+          >
+            {t.homeHero.newBadge}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <h1
+            className="mt-7 font-black leading-[0.95] tracking-[-0.04em]"
+            style={{ fontSize: "clamp(3.1rem, 9vw, 7.2rem)", color: "var(--foreground)" }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {t.homeHero.title1}
+            <br />
+            {t.homeHero.title2}
+            <br />
+            <span
+              style={{
+                background:
+                  "linear-gradient(90deg, #ff5a8b 5%, #ff8f74 35%, #7ce3ff 70%, #5effd6 100%)",
+                WebkitBackgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              {t.homeHero.highlight}
+            </span>{" "}
+            {t.homeHero.title3}
+          </h1>
+          <p
+            className="mx-auto mt-7 max-w-[860px] text-[1.48rem] leading-relaxed"
+            style={{ color: "var(--muted-strong)" }}
           >
-            Documentation
-          </a>
+            {t.homeHero.subtitle}
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/create-bracket"
+              className="btn-primary"
+              style={{
+                padding: "1.05rem 2rem",
+                fontSize: "1.1rem",
+                borderRadius: "1rem",
+              }}
+            >
+              <CirclePlus size={19} />
+              {t.homeHero.ctaCreate}
+            </Link>
+            <Link
+              href="/explore"
+              className="btn-ghost"
+              style={{
+                padding: "1.05rem 2.75rem",
+                fontSize: "1.1rem",
+                borderRadius: "1rem",
+              }}
+            >
+              {t.homeHero.ctaExplore}
+            </Link>
+          </div>
         </div>
-      </main>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <FeatureTile
+          href="/explore"
+          title={t.homeHero.featureBrackets}
+          icon={<Trophy size={38} />}
+          tone="amber"
+        />
+        <FeatureTile
+          href="/my-brackets"
+          title={t.nav.myLibrary}
+          icon={<Library size={38} />}
+          tone="blue"
+        />
+        <FeatureTile
+          href="/blindtest/room"
+          title={t.homeHero.featureBlindtests}
+          icon={<Play size={38} />}
+          tone="violet"
+        />
+        <FeatureTile
+          href="/battle-feat"
+          title={t.nav.battleFeat}
+          icon={<Play size={38} />}
+          tone="rose"
+        />
+      </section>
     </div>
+  );
+}
+
+type FeatureTileProps = Readonly<{
+  href: string;
+  title: string;
+  icon: React.ReactNode;
+  tone: "amber" | "blue" | "violet" | "rose";
+}>;
+
+function FeatureTile({ href, title, icon, tone }: FeatureTileProps) {
+  const accent = {
+    amber: "#f59e0b",
+    blue: "#3b82f6",
+    violet: "#ef4444",
+    rose: "#ff3b74",
+  } as const;
+
+  return (
+    <Link
+      href={href}
+      className="rounded-[30px] border p-8 transition hover:-translate-y-0.5"
+      style={{
+        minHeight: "210px",
+        borderColor: "var(--border-strong)",
+        background: `linear-gradient(180deg, color-mix(in srgb, ${accent[tone]} 14%, var(--surface)) 0%, var(--surface) 100%)`,
+        color: "var(--foreground)",
+      }}
+    >
+      <div className="mb-8" style={{ color: accent[tone] }}>
+        {icon}
+      </div>
+      <h3
+        className="text-5xl font-black tracking-[-0.03em]"
+        style={{ color: "var(--foreground)" }}
+      >
+        {title}
+      </h3>
+    </Link>
   );
 }
