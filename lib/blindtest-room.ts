@@ -45,22 +45,7 @@ export type BlindtestRoomBroadcastPayload = {
 
 // ─── Scoring helpers (mirrored from BlindtestGame, server-side canonical) ─────
 
-export function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\w\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-export function isCorrect(guess: string, truth: string): boolean {
-  const g = normalize(guess);
-  const t = normalize(truth);
-  if (!g) return false;
-  return t.includes(g) || g.includes(t);
-}
+export { normalize, isCorrect, isSingleArtistBlindtest } from "./blindtest-utils";
 
 export const POINTS_TITLE = 2;
 export const POINTS_ARTIST = 1;

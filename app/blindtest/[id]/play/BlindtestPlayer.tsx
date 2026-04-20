@@ -8,6 +8,7 @@ import BlindtestGame, {
   POINTS_PER_TRACK,
 } from "@/components/BlindtestGame";
 import { saveBlindtestSession } from "./actions";
+import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 import { Trophy, RotateCcw, Share2, Check, X } from "lucide-react";
 
 export default function BlindtestPlayer({
@@ -95,6 +96,11 @@ export default function BlindtestPlayer({
         {/* Track-by-track recap */}
         <div className="space-y-3">
           <h2 className="font-bold text-lg">Récap morceau par morceau</h2>
+          {isSingleArtistBlindtest(tracks) ? (
+            <p className="text-sm text-[color:var(--muted)]">
+              Un seul artiste : les points « artiste » ont été attribués automatiquement à chaque morceau.
+            </p>
+          ) : null}
           {finalAnswers.map((a) => (
             <div key={a.position} className="card flex gap-4 p-3 items-start">
               {a.coverUrl ? (

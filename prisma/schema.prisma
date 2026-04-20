@@ -271,11 +271,13 @@ model BattleFeatSoloSession {
   score            Int      @default(0)
   jokersUsed       Int      @default(0) @map("jokers_used")
   status           String   @default("active")
+  visibility       String   @default("private")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   player Profile? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@index([playerId])
+  @@index([visibility, createdAt(sort: Desc)])
   @@index([difficulty, score(sort: Desc)])
   @@map("battle_feat_solo_sessions")
 }
@@ -299,6 +301,7 @@ model BattleFeatRoom {
   hostJokers         Int      @default(1) @map("host_jokers")
   guestJokers        Int      @default(1) @map("guest_jokers")
   winnerId           String?  @map("winner_id") @db.Uuid
+  visibility         String   @default("private")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -306,5 +309,6 @@ model BattleFeatRoom {
   guest Profile? @relation("RoomGuest", fields: [guestId], references: [id])
 
   @@index([hostId])
+  @@index([visibility, createdAt(sort: Desc)])
   @@map("battle_feat_rooms")
 }

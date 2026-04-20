@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
+import { ensureBattleFeatVisibilityColumns } from "@/lib/ensure-battle-feat-visibility-columns";
 import { createClient } from "@/lib/supabase/server";
 import { getGuestIdentityFromCookies } from "@/lib/guest";
 import BracketCard, { type BracketSummary } from "@/components/BracketCard";
@@ -35,7 +36,9 @@ export default async function MyBracketsPage({
     filter === "private" || filter === "public" ? { visibility: filter } : {};
 
   const [brackets, tierlists, blindtests, soloSessions, battleFeatRooms] = activePlayerId
-    ? await Promise.all([
+    ? await (async () => {
+        await ensureBattleFeatVisibilityColumns(prisma);
+        return Promise.all([
         prisma.bracket.findMany({
           where: { ownerId: activePlayerId, ...visFilter },
           select: { id: true, title: true, theme: true, size: true, visibility: true, coverUrl: true },
@@ -57,24 +60,35 @@ export default async function MyBracketsPage({
           orderBy: { createdAt: "desc" },
         }),
         prisma.battleFeatSoloSession.findMany({
-          where: { playerId: activePlayerId },
-          select: { id: true, difficulty: true, score: true, status: true, createdAt: true },
+          where: { playerId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            difficulty: true,
+            score: true,
+            status: true,
+            visibility: true,
+            createdAt: true,
+          },
           orderBy: { createdAt: "desc" },
         }),
         prisma.battleFeatRoom.findMany({
           where: {
             OR: [{ hostId: activePlayerId }, { guestId: activePlayerId }],
+            ...visFilter,
           },
           select: {
             id: true,
+            hostId: true,
             status: true,
             hostScore: true,
             guestScore: true,
+            visibility: true,
             createdAt: true,
           },
           orderBy: { updatedAt: "desc" },
         }),
-      ])
+      ]);
+      })()
     : [[], [], [], [], []];
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
@@ -90,6 +104,7 @@ export default async function MyBracketsPage({
     difficulty: s.difficulty,
     score: s.score,
     status: s.status,
+    visibility: s.visibility,
     createdAt: s.createdAt.toISOString(),
   })) as BattleFeatSessionSummary[];
   const battleFeatRoomList = battleFeatRooms.map((room) => ({
@@ -97,8 +112,12 @@ export default async function MyBracketsPage({
     status: room.status,
     hostScore: room.hostScore,
     guestScore: room.guestScore,
+    visibility: room.visibility,
     createdAt: room.createdAt.toISOString(),
+    canEditVisibility: room.hostId === activePlayerId,
   })) as BattleFeatRoomSummary[];
+
+  const libraryEditor = Boolean(activePlayerId);
 
   const createHref =
     tab === "tierlists"
@@ -160,16 +179,14 @@ export default async function MyBracketsPage({
         </div>
 
       {/* Visibility filter */}
-      {tab !== "battlefeat" ? (
-        <div
-          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
-          style={{ borderColor: "#283041", background: "#181b24" }}
-        >
-          <FilterLink current={filter} value="all" label="Tous" tab={tab} />
-          <FilterLink current={filter} value="private" label="Privé" tab={tab} />
-          <FilterLink current={filter} value="public" label="Public" tab={tab} />
-        </div>
-      ) : null}
+      <div
+        className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
+        style={{ borderColor: "#283041", background: "#181b24" }}
+      >
+        <FilterLink current={filter} value="all" label="Tous" tab={tab} />
+        <FilterLink current={filter} value="private" label="Privé" tab={tab} />
+        <FilterLink current={filter} value="public" label="Public" tab={tab} />
+      </div>
       </div>
 
       {tab === "brackets" ? (
@@ -181,7 +198,9 @@ export default async function MyBracketsPage({
           />
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {bracketList.map((b) => <BracketCard key={b.id} b={b} />)}
+            {bracketList.map((b) => (
+              <BracketCard key={b.id} b={b} libraryEditor={libraryEditor} />
+            ))}
           </div>
         )
       ) : tab === "tierlists" ? (
@@ -193,7 +212,9 @@ export default async function MyBracketsPage({
           />
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {tierlistList.map((t) => <TierlistCard key={t.id} t={t} />)}
+            {tierlistList.map((t) => (
+              <TierlistCard key={t.id} t={t} libraryEditor={libraryEditor} />
+            ))}
           </div>
         )
       ) : tab === "blindtests" ? (
@@ -205,7 +226,9 @@ export default async function MyBracketsPage({
           />
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {blindtestList.map((b) => <BlindtestCard key={b.id} b={b} />)}
+            {blindtestList.map((b) => (
+              <BlindtestCard key={b.id} b={b} libraryEditor={libraryEditor} />
+            ))}
           </div>
         )
       ) : tab === "battlefeat" ? (
@@ -226,7 +249,9 @@ export default async function MyBracketsPage({
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {battleFeatList.map((s) => <BattleFeatSoloCard key={s.id} s={s} />)}
+                  {battleFeatList.map((s) => (
+                    <BattleFeatSoloCard key={s.id} s={s} libraryEditor={libraryEditor} />
+                  ))}
                 </div>
               </section>
             ) : null}
@@ -240,7 +265,9 @@ export default async function MyBracketsPage({
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {battleFeatRoomList.map((room) => <BattleFeatRoomCard key={room.id} r={room} />)}
+                  {battleFeatRoomList.map((room) => (
+                    <BattleFeatRoomCard key={room.id} r={room} libraryEditor={libraryEditor} />
+                  ))}
                 </div>
               </section>
             ) : null}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, EyeOff, Music } from "lucide-react";
+import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type BlindtestSummary = {
   id: string;
@@ -8,19 +9,21 @@ export type BlindtestSummary = {
   trackCount?: number;
 };
 
-export default function BlindtestCard({ b }: { b: BlindtestSummary }) {
-  return (
-    <Link
-      href={`/blindtest/${b.id}`}
-      className="group media-card"
-    >
+export default function BlindtestCard({
+  b,
+  libraryEditor,
+}: {
+  b: BlindtestSummary;
+  libraryEditor?: boolean;
+}) {
+  const vis = b.visibility === "public" ? "public" : "private";
+  const inner = (
+    <>
       <div className="media-thumb flex items-center justify-center">
         <Music size={36} className="text-[color:var(--muted)] group-hover:text-[color:var(--accent)] transition" />
-        <span className="media-pill absolute right-2 top-2">
-          Blindtest
-        </span>
+        <span className="media-pill absolute right-2 top-2">Blindtest</span>
         <span className="media-pill absolute left-2 top-2">
-          {b.visibility === "public" ? (
+          {vis === "public" ? (
             <>
               <Eye size={12} /> Public
             </>
@@ -39,6 +42,23 @@ export default function BlindtestCard({ b }: { b: BlindtestSummary }) {
           </p>
         ) : null}
       </div>
-    </Link>
+    </>
+  );
+
+  if (!libraryEditor) {
+    return (
+      <Link href={`/blindtest/${b.id}`} className="group media-card">
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Link href={`/blindtest/${b.id}`} className="group media-card">
+        {inner}
+      </Link>
+      <LibraryVisibilityToggle entity="blindtest" id={b.id} visibility={vis} />
+    </div>
   );
 }

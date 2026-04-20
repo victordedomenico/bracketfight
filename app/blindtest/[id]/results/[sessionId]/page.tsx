@@ -3,6 +3,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Trophy, Check, X } from "lucide-react";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
+import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,9 @@ export default async function BlindtestResultsPage({
 
   const answers = session.answers as unknown as BlindtestAnswer[];
   const pct = session.maxScore > 0 ? Math.round((session.score / session.maxScore) * 100) : 0;
+  const singleArtistSession = isSingleArtistBlindtest(
+    answers.map((a) => ({ artist: a.trueArtist })),
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-6">
@@ -88,6 +92,11 @@ export default async function BlindtestResultsPage({
       {/* Track recap */}
       <div className="space-y-3">
         <h2 className="font-bold text-lg">Récap morceau par morceau</h2>
+        {singleArtistSession ? (
+          <p className="text-sm text-[color:var(--muted)]">
+            Partie « un seul artiste » : les points artiste ont été donnés automatiquement.
+          </p>
+        ) : null}
         {answers.map((a) => (
           <div key={a.position} className="card flex gap-4 p-3 items-start">
             {a.coverUrl ? (

@@ -30,6 +30,7 @@ import {
   refreshRoomState,
 } from "./actions";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 
 const TIMER_SECONDS = 30;
 
@@ -422,6 +423,11 @@ export default function BlindtestRoomClient({
   const track = room.blindtest.tracks[room.currentTrack];
   const myScore = isHost ? room.hostScore : room.guestScore;
 
+  const singleArtistBlindtest = useMemo(
+    () => isSingleArtistBlindtest(room.blindtest.tracks),
+    [room.blindtest.tracks],
+  );
+
   // ── WAITING ────────────────────────────────────────────────────────────────
   if (room.status === "waiting") {
     const canJoin = !isHost && !room.guestId;
@@ -435,6 +441,12 @@ export default function BlindtestRoomClient({
           <h2 className="text-xl font-bold">Blindtest multijoueur</h2>
           <p className="mt-1 text-sm text-[color:var(--muted)]">
             {room.blindtest.tracks.length} morceaux · 30 secondes par morceau
+            {singleArtistBlindtest ? (
+              <>
+                {" "}
+                · un seul artiste : tu ne saisis que le <strong>titre</strong>
+              </>
+            ) : null}
           </p>
 
           {waitingForGuest && (
@@ -757,6 +769,17 @@ export default function BlindtestRoomClient({
 
             {/* Inputs */}
             <div className="flex-1 w-full space-y-4">
+              {singleArtistBlindtest ? (
+                <p
+                  className="rounded-xl border px-3 py-2 text-sm text-[color:var(--muted)]"
+                  style={{ borderColor: "#2a3242", background: "#131822" }}
+                >
+                  Un seul artiste sur tout le blindtest : indique uniquement le{" "}
+                  <strong className="text-[color:var(--foreground)]">titre</strong>. Les{" "}
+                  <strong className="text-[color:var(--foreground)]">+{POINTS_ARTIST} pt</strong> artiste sont
+                  ajoutés automatiquement.
+                </p>
+              ) : null}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
                   Titre du morceau (+{POINTS_TITLE} pts)
@@ -773,20 +796,22 @@ export default function BlindtestRoomClient({
                   disabled={isSpectator}
                 />
               </div>
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                  Artiste (+{POINTS_ARTIST} pt)
-                </label>
-                <input
-                  className="input mt-1"
-                  placeholder="Tape l'artiste…"
-                  value={guessArtist}
-                  onChange={(e) => setGuessArtist(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                  autoComplete="off"
-                  disabled={isSpectator}
-                />
-              </div>
+              {!singleArtistBlindtest ? (
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
+                    Artiste (+{POINTS_ARTIST} pt)
+                  </label>
+                  <input
+                    className="input mt-1"
+                    placeholder="Tape l'artiste…"
+                    value={guessArtist}
+                    onChange={(e) => setGuessArtist(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                    autoComplete="off"
+                    disabled={isSpectator}
+                  />
+                </div>
+              ) : null}
 
               {!isSpectator && (
                 <div className="flex gap-2 pt-1">
@@ -841,7 +866,11 @@ export default function BlindtestRoomClient({
                 points={POINTS_TITLE}
               />
               <AnswerRow
-                label={`Artiste (+${POINTS_ARTIST} pt)`}
+                label={
+                  singleArtistBlindtest
+                    ? `Artiste (+${POINTS_ARTIST} pt) · commun à tous les titres`
+                    : `Artiste (+${POINTS_ARTIST} pt)`
+                }
                 truth={track.artist}
                 guess={myLastAnswer.guessArtist}
                 correct={myLastAnswer.correctArtist}

@@ -5,6 +5,7 @@ import { resolvePlayerIdentity } from "@/lib/guest";
 import {
   getBlindtestRoomSnapshot,
   isCorrect,
+  isSingleArtistBlindtest,
   POINTS_TITLE,
   POINTS_ARTIST,
 } from "@/lib/blindtest-room";
@@ -130,14 +131,16 @@ export async function submitAnswer(
   if (!track) return { ok: false as const, error: "Morceau introuvable" };
 
   // Compute correctness server-side
+  const tracks = room.blindtest.tracks;
+  const singleArtistMode = isSingleArtistBlindtest(tracks);
   const correctTitle = isCorrect(guessTitle, track.title);
-  const correctArtist = isCorrect(guessArtist, track.artist);
+  const correctArtist = singleArtistMode ? true : isCorrect(guessArtist, track.artist);
   const points = (correctTitle ? POINTS_TITLE : 0) + (correctArtist ? POINTS_ARTIST : 0);
 
   const answer: BlindtestAnswer = {
     position,
     guessTitle,
-    guessArtist,
+    guessArtist: singleArtistMode ? track.artist : guessArtist,
     correctTitle,
     correctArtist,
     points,

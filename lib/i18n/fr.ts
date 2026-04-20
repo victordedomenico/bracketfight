@@ -85,6 +85,17 @@ export interface Dictionary {
     battleFeatDesc: string;
     playSolo: string;
     createRoom: string;
+    tabAll: string;
+    tabBrackets: string;
+    tabTierlists: string;
+    tabBlindtests: string;
+    tabBattlefeat: string;
+    sectionBrackets: string;
+    sectionTierlists: string;
+    sectionBlindtests: string;
+    sectionBattleFeatSolo: string;
+    sectionBattleFeatRooms: string;
+    seeAll: string;
   };
   auth: {
     loginTitle: string;
@@ -219,6 +230,17 @@ export const fr: Dictionary = {
       "Le jeu de la chaîne de featurings ! Enchaîne les artistes qui ont collaboré ensemble.",
     playSolo: "Jouer en solo",
     createRoom: "Créer une room",
+    tabAll: "Tous",
+    tabBrackets: "Brackets",
+    tabTierlists: "Tierlists",
+    tabBlindtests: "Blindtests",
+    tabBattlefeat: "BattleFeat",
+    sectionBrackets: "Brackets",
+    sectionTierlists: "Tierlists",
+    sectionBlindtests: "Blindtests",
+    sectionBattleFeatSolo: "BattleFeat — Sessions solo",
+    sectionBattleFeatRooms: "BattleFeat — Rooms",
+    seeAll: "Voir tout",
   },
   auth: {
     loginTitle: "Connexion",

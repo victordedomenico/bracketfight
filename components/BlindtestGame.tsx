@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Play, Pause, Check, X, SkipForward } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { isCorrect, isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -34,25 +35,6 @@ const TIMER_SECONDS = 30;
 export const POINTS_TITLE = 2;
 export const POINTS_ARTIST = 1;
 export const POINTS_PER_TRACK = POINTS_TITLE + POINTS_ARTIST;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\w\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function isCorrect(guess: string, truth: string): boolean {
-  const g = normalize(guess);
-  const t = normalize(truth);
-  if (!g) return false;
-  return t.includes(g) || g.includes(t);
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -103,6 +85,8 @@ export default function BlindtestGame({
   tracks: BlindtrackData[];
   onComplete: (answers: BlindtestAnswer[], score: number) => void;
 }) {
+  const singleArtistMode = useMemo(() => isSingleArtistBlindtest(tracks), [tracks]);
+
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>("loading");
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
@@ -196,7 +180,7 @@ export default function BlindtestGame({
     const { title: gt, artist: ga } = guessRef.current;
     const track = tracks[idxRef.current];
     const correctTitle = isCorrect(gt, track.title);
-    const correctArtist = isCorrect(ga, track.artist);
+    const correctArtist = singleArtistMode ? true : isCorrect(ga, track.artist);
     const points = (correctTitle ? POINTS_TITLE : 0) + (correctArtist ? POINTS_ARTIST : 0);
 
     setAnswers((prev) => [
@@ -204,7 +188,7 @@ export default function BlindtestGame({
       {
         position: track.position,
         guessTitle: gt,
-        guessArtist: ga,
+        guessArtist: singleArtistMode ? track.artist : ga,
         correctTitle,
         correctArtist,
         points,
@@ -214,7 +198,7 @@ export default function BlindtestGame({
       },
     ]);
     setPhase("revealed");
-  }, [tracks]);
+  }, [tracks, singleArtistMode]);
 
   // ── Timer ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -338,6 +322,14 @@ export default function BlindtestGame({
 
             {/* Inputs */}
             <div className="flex-1 w-full space-y-4">
+              {singleArtistMode ? (
+                <p className="rounded-xl border px-3 py-2 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
+                  Un seul artiste sur tout le blindtest : devine uniquement le{" "}
+                  <strong className="text-[color:var(--foreground)]">titre</strong>. Les{" "}
+                  <strong className="text-[color:var(--foreground)]">+{POINTS_ARTIST} pt</strong> artiste sont
+                  attribués automatiquement.
+                </p>
+              ) : null}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
                   Titre du morceau (+{POINTS_TITLE} pts)
@@ -353,19 +345,21 @@ export default function BlindtestGame({
                   autoFocus
                 />
               </div>
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                  Artiste (+{POINTS_ARTIST} pt)
-                </label>
-                <input
-                  className="input mt-1"
-                  placeholder="Tape l'artiste…"
-                  value={guessArtist}
-                  onChange={(e) => setGuessArtist(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && submit()}
-                  autoComplete="off"
-                />
-              </div>
+              {!singleArtistMode ? (
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
+                    Artiste (+{POINTS_ARTIST} pt)
+                  </label>
+                  <input
+                    className="input mt-1"
+                    placeholder="Tape l'artiste…"
+                    value={guessArtist}
+                    onChange={(e) => setGuessArtist(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && submit()}
+                    autoComplete="off"
+                  />
+                </div>
+              ) : null}
 
               <div className="flex gap-2 pt-1">
                 <button
@@ -424,7 +418,11 @@ export default function BlindtestGame({
                 points={POINTS_TITLE}
               />
               <AnswerRow
-                label={`Artiste (+${POINTS_ARTIST} pt)`}
+                label={
+                  singleArtistMode
+                    ? `Artiste (+${POINTS_ARTIST} pt) · commun à tous les titres`
+                    : `Artiste (+${POINTS_ARTIST} pt)`
+                }
                 truth={track.artist}
                 guess={lastAnswer.guessArtist}
                 correct={lastAnswer.correctArtist}

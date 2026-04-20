@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, EyeOff, LayoutList } from "lucide-react";
+import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type TierlistSummary = {
   id: string;
@@ -10,12 +11,16 @@ export type TierlistSummary = {
   trackCount?: number;
 };
 
-export default function TierlistCard({ t }: { t: TierlistSummary }) {
-  return (
-    <Link
-      href={`/tierlist/${t.id}`}
-      className="group media-card"
-    >
+export default function TierlistCard({
+  t,
+  libraryEditor,
+}: {
+  t: TierlistSummary;
+  libraryEditor?: boolean;
+}) {
+  const vis = t.visibility === "public" ? "public" : "private";
+  const inner = (
+    <>
       <div className="media-thumb">
         {t.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -29,11 +34,9 @@ export default function TierlistCard({ t }: { t: TierlistSummary }) {
             <LayoutList size={32} className="text-[color:var(--muted)]" />
           </div>
         )}
-        <span className="media-pill absolute right-2 top-2">
-          Tierlist
-        </span>
+        <span className="media-pill absolute right-2 top-2">Tierlist</span>
         <span className="media-pill absolute left-2 top-2">
-          {t.visibility === "public" ? (
+          {vis === "public" ? (
             <>
               <Eye size={12} /> Public
             </>
@@ -47,11 +50,26 @@ export default function TierlistCard({ t }: { t: TierlistSummary }) {
       <div className="p-4">
         <p className="font-semibold line-clamp-1">{t.title}</p>
         {t.theme ? (
-          <p className="mt-0.5 text-xs text-[color:var(--muted)] line-clamp-1">
-            {t.theme}
-          </p>
+          <p className="mt-0.5 text-xs text-[color:var(--muted)] line-clamp-1">{t.theme}</p>
         ) : null}
       </div>
-    </Link>
+    </>
+  );
+
+  if (!libraryEditor) {
+    return (
+      <Link href={`/tierlist/${t.id}`} className="group media-card">
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Link href={`/tierlist/${t.id}`} className="group media-card">
+        {inner}
+      </Link>
+      <LibraryVisibilityToggle entity="tierlist" id={t.id} visibility={vis} />
+    </div>
   );
 }
