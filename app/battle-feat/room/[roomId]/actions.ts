@@ -1,8 +1,8 @@
 "use server";
 
 import type { Prisma } from "@prisma/client";
-import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
+import { resolvePlayerIdentity } from "@/lib/guest";
 import {
   canClaimTurnTimeout,
   getBattleFeatRoomSnapshot,
@@ -19,13 +19,13 @@ type MoveArtistInput = {
   pictureUrl: string | null;
 };
 
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  return user;
+async function requirePlayer() {
+  try {
+    const identity = await resolvePlayerIdentity();
+    return { id: identity.playerId };
+  } catch {
+    return null;
+  }
 }
 
 async function buildRoomResponse(roomId: string, event?: RoomEvent) {
@@ -36,7 +36,7 @@ async function buildRoomResponse(roomId: string, event?: RoomEvent) {
 
 /** Re-fetch room from DB — fallback when Realtime broadcast does not reach every client. */
 export async function refreshRoomState(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false, error: "Non authentifié" } as const;
 
   const room = await getBattleFeatRoomSnapshot(roomId);
@@ -111,7 +111,7 @@ async function applyMoveToRoom(
 }
 
 export async function joinRoom(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false, error: "Non authentifié" } as const;
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });
@@ -137,7 +137,7 @@ export async function startGame(
   startingArtistName: string,
   startingArtistPic: string | null,
 ) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false, error: "Non authentifié" } as const;
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });
@@ -183,7 +183,7 @@ export async function startGame(
 }
 
 export async function submitMove(roomId: string, artist: MoveArtistInput) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false, valid: false, error: "Non authentifié" } as const;
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });
@@ -233,7 +233,7 @@ export async function submitMove(roomId: string, artist: MoveArtistInput) {
 }
 
 export async function useJoker(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false, error: "Non authentifié" } as const;
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });
@@ -275,7 +275,7 @@ export async function useJoker(roomId: string) {
 }
 
 export async function rematch(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false, error: "Non authentifié" } as const;
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });
@@ -311,7 +311,7 @@ export async function rematch(roomId: string) {
 }
 
 export async function endGameTimeout(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false, error: "Non authentifié" } as const;
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });

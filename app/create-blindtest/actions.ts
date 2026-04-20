@@ -66,6 +66,7 @@ export async function createBlindtest(input: {
     } = await supabase.auth.getUser();
 
     if (user) {
+      let roomId: string | null = null;
       try {
         const room = await prisma.blindtestRoom.create({
           data: {
@@ -76,12 +77,13 @@ export async function createBlindtest(input: {
             guestAnswers: [],
           },
         });
-        redirect(`/blindtest/room/${room.id}`);
+        roomId = room.id;
       } catch {
-        // If room creation fails, fall through to blindtest detail page
+        // room creation failed, fall through
       }
+      if (roomId) redirect(`/blindtest/room/${roomId}`);
     }
-    // Not logged in or room creation failed: go to blindtest page so user can create room after login
+    // Not logged in or room creation failed
     redirect(`/blindtest/${blindtestId}`);
   }
 

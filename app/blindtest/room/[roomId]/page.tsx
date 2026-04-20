@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getGuestIdentityFromCookies } from "@/lib/guest";
 import { getBlindtestRoomSnapshot } from "@/lib/blindtest-room";
 import BlindtestRoomClient from "./BlindtestRoomClient";
 import SectionHeader from "@/components/ui/SectionHeader";
@@ -30,7 +31,18 @@ export default async function BlindtestRoomPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  let playerId: string | null = user?.id ?? null;
+
+  if (!playerId) {
+    const cookieGuest = await getGuestIdentityFromCookies();
+    if (cookieGuest) playerId = cookieGuest.id;
+  }
+
+  if (!playerId) {
+    // No session yet — bootstrap an anonymous guest session via a route handler
+    // (Server Components cannot set cookies, but route handlers can).
+    redirect(`/api/guest/ensure?redirect=${encodeURIComponent(`/blindtest/room/${roomId}`)}`);
+  }
 
   const room = await getBlindtestRoomSnapshot(roomId);
   if (!room) notFound();
@@ -46,7 +58,7 @@ export default async function BlindtestRoomPage({
       </div>
       <BlindtestRoomClient
         initialRoom={room}
-        userId={user.id}
+        userId={playerId}
       />
     </div>
   );

@@ -220,8 +220,13 @@ export async function resolvePlayerIdentity() {
   }
 
   if (isGuest) {
-    cookieStore.set(GUEST_ID_COOKIE, profile.id, COOKIE_OPTIONS);
-    cookieStore.set(GUEST_USERNAME_COOKIE, finalUsername, COOKIE_OPTIONS);
+    try {
+      cookieStore.set(GUEST_ID_COOKIE, profile.id, COOKIE_OPTIONS);
+      cookieStore.set(GUEST_USERNAME_COOKIE, finalUsername, COOKIE_OPTIONS);
+    } catch {
+      // Called from a Server Component — cookies can only be set from Server Actions / Route Handlers.
+      // Safe to ignore: Supabase auth cookies are already set, and guest cookies will be set on next write.
+    }
   }
 
   return {

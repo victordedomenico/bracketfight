@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { getGuestIdentityFromCookies } from "@/lib/guest";
 import BattleFeatRoom from "./BattleFeatRoom";
 import { getBattleFeatRoomSnapshot } from "@/lib/battle-feat-server";
 
@@ -25,7 +26,16 @@ export default async function RoomPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  let playerId: string | null = user?.id ?? null;
+
+  if (!playerId) {
+    const cookieGuest = await getGuestIdentityFromCookies();
+    if (cookieGuest) playerId = cookieGuest.id;
+  }
+
+  if (!playerId) {
+    redirect(`/api/guest/ensure?redirect=${encodeURIComponent(`/battle-feat/room/${roomId}`)}`);
+  }
 
   const roomData = await getBattleFeatRoomSnapshot(roomId);
   if (!roomData) notFound();
@@ -38,7 +48,7 @@ export default async function RoomPage({
           Defi en temps reel · Room {roomData.id.slice(0, 8)}
         </p>
       </div>
-      <BattleFeatRoom initialRoom={roomData} userId={user.id} />
+      <BattleFeatRoom initialRoom={roomData} userId={playerId} />
     </div>
   );
 }

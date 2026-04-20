@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
+import { resolvePlayerIdentity } from "@/lib/guest";
 import {
   getBlindtestRoomSnapshot,
   isCorrect,
@@ -14,13 +14,13 @@ import type { Prisma } from "@prisma/client";
 
 // ─── Auth helper ────────────────────────────────────────────────────────────
 
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  return user;
+async function requirePlayer() {
+  try {
+    const identity = await resolvePlayerIdentity();
+    return { id: identity.playerId };
+  } catch {
+    return null;
+  }
 }
 
 // ─── Response builder ────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ async function buildResponse(roomId: string, event: BlindtestRoomEvent) {
 
 /** Re-fetch room from DB — fallback when Realtime broadcast does not reach every client. */
 export async function refreshRoomState(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
   const room = await getBlindtestRoomSnapshot(roomId);
@@ -44,7 +44,7 @@ export async function refreshRoomState(roomId: string) {
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 export async function joinRoom(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
   const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
@@ -69,7 +69,7 @@ export async function joinRoom(roomId: string) {
 }
 
 export async function startGame(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
   const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
@@ -102,7 +102,7 @@ export async function submitAnswer(
   guessTitle: string,
   guessArtist: string,
 ) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
   const room = await prisma.blindtestRoom.findUnique({
@@ -178,7 +178,7 @@ export async function submitAnswer(
 }
 
 export async function nextTrack(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
   const room = await prisma.blindtestRoom.findUnique({
@@ -246,7 +246,7 @@ export async function nextTrack(roomId: string) {
 }
 
 export async function rematch(roomId: string) {
-  const user = await requireUser();
+  const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
   const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
