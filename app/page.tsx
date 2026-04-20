@@ -13,7 +13,7 @@ export default async function Home() {
   return (
     <div className="space-y-4">
       <section
-        className="relative overflow-hidden rounded-[36px] border px-6 py-12 text-center md:px-10 md:py-16 lg:px-20 lg:py-20"
+        className="relative rounded-[36px] border px-7 py-12 text-center sm:px-10 md:px-12 md:py-16 lg:px-20 lg:py-20"
         style={{
           borderColor: "var(--border-strong)",
           background: "var(--surface)",
@@ -22,7 +22,7 @@ export default async function Home() {
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[36px]"
           style={{
             background:
               "radial-gradient(900px 480px at 55% 10%, rgba(239,68,68,0.22) 0%, rgba(249,115,22,0.10) 45%, transparent 78%)",
@@ -40,18 +40,18 @@ export default async function Home() {
             {t.homeHero.newBadge}
           </p>
           <h1
-            className="mt-7 font-black leading-[0.95] tracking-[-0.04em]"
+            className="mt-7 px-[0.08em] pb-[0.06em] font-black leading-[1.06] tracking-[-0.025em]"
             style={{ fontSize: "clamp(3.1rem, 9vw, 7.2rem)", color: "var(--foreground)" }}
           >
-            {t.homeHero.title1}
-            <br />
-            {t.homeHero.title2}
+            {t.homeHero.title1} {t.homeHero.title2}
             <br />
             <span
+              className="inline-block pb-[0.05em]"
               style={{
                 background:
                   "linear-gradient(90deg, #ff5a8b 5%, #ff8f74 35%, #7ce3ff 70%, #5effd6 100%)",
                 WebkitBackgroundClip: "text",
+                backgroundClip: "text",
                 color: "transparent",
               }}
             >
