@@ -231,11 +231,14 @@ export default function BattleFeatRoom({
         const cur = roomRef.current;
         const next = r.room;
         if (
+          next.hostId !== cur.hostId ||
           next.guestId !== cur.guestId ||
           next.status !== cur.status ||
           next.currentTurnId !== cur.currentTurnId ||
           next.moves.length !== cur.moves.length ||
-          next.updatedAt !== cur.updatedAt
+          next.updatedAt !== cur.updatedAt ||
+          next.hostLastSeenAt !== cur.hostLastSeenAt ||
+          next.guestLastSeenAt !== cur.guestLastSeenAt
         ) {
           setRoom(next);
           setNow(Date.now());

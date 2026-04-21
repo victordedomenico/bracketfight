@@ -259,12 +259,15 @@ export default function BlindtestRoomClient({
         const cur = roomRef.current;
         const next = r.room;
         if (
+          next.hostId !== cur.hostId ||
           next.guestId !== cur.guestId ||
           next.status !== cur.status ||
           next.updatedAt !== cur.updatedAt ||
           next.currentTrack !== cur.currentTrack ||
           next.hostAnswers.length !== cur.hostAnswers.length ||
-          next.guestAnswers.length !== cur.guestAnswers.length
+          next.guestAnswers.length !== cur.guestAnswers.length ||
+          next.hostLastSeenAt !== cur.hostLastSeenAt ||
+          next.guestLastSeenAt !== cur.guestLastSeenAt
         ) {
           setRoom(next);
           setNow(Date.now());
