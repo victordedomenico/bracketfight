@@ -2,16 +2,21 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import TierlistBoard, { type TierItem } from "@/components/TierlistBoard";
+import TierlistBoard, { type TierItem, type TierlistBoardTexts } from "@/components/TierlistBoard";
 import { type TierlistSavePayload } from "@/lib/tierlist-tiers";
+import type { Dictionary } from "@/lib/i18n";
 import { saveTierlistSession } from "./actions";
 
 export default function TierlistPlayer({
   tierlistId,
   tracks,
+  boardTexts,
+  playerTexts,
 }: {
   tierlistId: string;
   tracks: TierItem[];
+  boardTexts: TierlistBoardTexts;
+  playerTexts: Dictionary["tierlistPlayer"];
 }) {
   const router = useRouter();
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
@@ -38,9 +43,9 @@ export default function TierlistPlayer({
         : "";
     return (
       <div className="card p-8 text-center mt-6">
-        <p className="text-xl font-bold">Tierlist sauvegardée 🎉</p>
+        <p className="text-xl font-bold">{playerTexts.savedTitle}</p>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          Partage le lien ci-dessous avec tes amis.
+          {playerTexts.savedSubtitle}
         </p>
         <div className="mt-4 flex gap-2 justify-center flex-wrap">
           <input
@@ -53,14 +58,14 @@ export default function TierlistPlayer({
             onClick={() => navigator.clipboard.writeText(shareUrl).catch(() => {})}
             className="btn-primary text-sm"
           >
-            Copier
+            {playerTexts.copy}
           </button>
         </div>
         <button
           onClick={() => setSavedSessionId(null)}
           className="btn-ghost mt-4 text-sm"
         >
-          Continuer à modifier
+          {playerTexts.continueEditing}
         </button>
       </div>
     );
@@ -73,6 +78,7 @@ export default function TierlistPlayer({
         tracks={tracks}
         onSave={handleSave}
         saving={saving}
+        texts={boardTexts}
       />
       {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
     </>

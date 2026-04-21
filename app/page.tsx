@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import {
   CirclePlus,
   Library,
@@ -6,9 +7,22 @@ import {
   Trophy,
 } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
+import { detectCountryCode, getTopAlbumsByCountry } from "@/lib/top-albums";
 
 export default async function Home() {
   const { t } = await getI18n();
+  const requestHeaders = await headers();
+  const countryCode = detectCountryCode(requestHeaders);
+  const topAlbums = await getTopAlbumsByCountry(countryCode, 18);
+  const countryName =
+    typeof Intl.DisplayNames === "function"
+      ? new Intl.DisplayNames(["fr", "en"], { type: "region" }).of(countryCode) ?? countryCode
+      : countryCode;
+  const topCoversTitle =
+    countryName && countryName !== countryCode
+      ? t.homeHero.coversTopCountry.replace("{country}", countryName)
+      : t.homeHero.coversTopFallback;
+  const marqueeAlbums = topAlbums.length > 0 ? [...topAlbums, ...topAlbums] : [];
 
   return (
     <div className="space-y-4">
@@ -67,7 +81,7 @@ export default async function Home() {
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/create-bracket"
+              href="/create"
               className="btn-primary"
               style={{
                 padding: "1.05rem 2rem",
@@ -90,6 +104,39 @@ export default async function Home() {
               {t.homeHero.ctaExplore}
             </Link>
           </div>
+          {topAlbums.length > 0 ? (
+            <div className="mt-8">
+              <p
+                className="mb-3 text-xs font-semibold uppercase tracking-[0.14em]"
+                style={{ color: "var(--muted-strong)" }}
+              >
+                {topCoversTitle}
+              </p>
+              <div className="home-covers-mask">
+                <div className="home-covers-track">
+                  {marqueeAlbums.map((album, index) => (
+                    <a
+                      key={`${album.id}-${index}`}
+                      href={album.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="home-cover-item"
+                      aria-label={`${album.title} - ${album.artist}`}
+                      title={`${album.title} - ${album.artist}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={album.coverUrl}
+                        alt={`${album.title} - ${album.artist}`}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 

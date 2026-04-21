@@ -19,7 +19,18 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Play, Pause, Share2, RotateCcw, Download, Plus, Trash2 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Share2,
+  RotateCcw,
+  Download,
+  Plus,
+  Settings,
+  ChevronUp,
+  ChevronDown,
+  X,
+} from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import {
@@ -28,6 +39,7 @@ import {
   type TierConfig,
   type TierlistSavePayload,
 } from "@/lib/tierlist-tiers";
+import type { Dictionary } from "@/lib/i18n";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -45,6 +57,32 @@ type TierState = Record<string, TierItem[]>;
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const POOL_ID = "__pool__";
+const TIER_LABEL_COLORS = [
+  "#f67f7f",
+  "#ebb56f",
+  "#ecd172",
+  "#ecec6b",
+  "#aae86e",
+  "#69df6c",
+  "#67e0de",
+  "#73b2eb",
+  "#797df1",
+  "#d772e6",
+  "#b97ab6",
+  "#333438",
+  "#6f6f6f",
+  "#bdbdbd",
+  "#eeeeee",
+];
+
+export type TierlistBoardTexts = Dictionary["tierlistBoard"];
+
+function formatText(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (acc, [key, value]) => acc.replaceAll(`{${key}}`, String(value)),
+    template,
+  );
+}
 
 function buildInitialState(tracks: TierItem[], tiers: TierConfig[]): TierState {
   const state: TierState = { [POOL_ID]: [...tracks] };
@@ -59,11 +97,13 @@ function TrackChip({
   isDragging,
   onPreview,
   playingPosition,
+  texts,
 }: {
   item: TierItem;
   isDragging?: boolean;
   onPreview: (pos: number, deezerTrackId: number, url: string) => void;
   playingPosition: number | null;
+  texts: TierlistBoardTexts;
 }) {
   const isPlaying = playingPosition === item.position;
   return (
@@ -87,7 +127,7 @@ function TrackChip({
             onPreview(item.position, item.deezerTrackId, item.previewUrl);
           }}
           className="pointer-events-auto rounded-full bg-black/65 p-2 text-white transition hover:bg-black/80"
-          aria-label={isPlaying ? "Pause" : "Écouter"}
+          aria-label={isPlaying ? "Pause" : texts.listen}
         >
           {isPlaying ? (
             <Pause size={20} />
@@ -107,10 +147,12 @@ function SortableTrack({
   item,
   onPreview,
   playingPosition,
+  texts,
 }: {
   item: TierItem;
   onPreview: (pos: number, deezerTrackId: number, url: string) => void;
   playingPosition: number | null;
+  texts: TierlistBoardTexts;
 }) {
   const id = String(item.position);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -128,6 +170,7 @@ function SortableTrack({
         isDragging={isDragging}
         onPreview={onPreview}
         playingPosition={playingPosition}
+        texts={texts}
       />
     </div>
   );
@@ -136,57 +179,47 @@ function SortableTrack({
 function TierRow({
   tier,
   items,
-  canDelete,
-  onLabelChange,
-  onDelete,
+  onOpenEditor,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
   onPreview,
   playingPosition,
+  texts,
 }: {
   tier: TierConfig;
   items: TierItem[];
-  canDelete: boolean;
-  onLabelChange: (tierId: string, nextLabel: string) => void;
-  onDelete: (tierId: string) => void;
+  onOpenEditor: (tierId: string) => void;
+  onMoveUp: (tierId: string) => void;
+  onMoveDown: (tierId: string) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   onPreview: (pos: number, deezerTrackId: number, url: string) => void;
   playingPosition: number | null;
+  texts: TierlistBoardTexts;
 }) {
   const { id: tierId, label, color } = tier;
   const sortableIds = items.map((i) => String(i.position));
   const { setNodeRef, isOver } = useDroppable({ id: tierId });
 
   return (
-    <div className="flex min-h-[72px] items-stretch overflow-hidden rounded-xl border border-[color:var(--border)]">
+    <div className="flex min-h-[74px] items-stretch overflow-hidden border border-black/80 bg-[#181818]">
       <div
-        className="flex w-20 shrink-0 flex-col justify-center gap-1 px-1 py-2 text-white"
+        className="flex w-[88px] shrink-0 items-center justify-center border-r border-black/60 px-2 py-2 text-white"
         style={{ backgroundColor: color }}
       >
-        <input
-          value={label}
-          onChange={(e) => onLabelChange(tierId, e.target.value)}
-          className="w-full rounded bg-black/20 px-1.5 py-1 text-center text-sm font-black tracking-wide outline-none placeholder:text-white/70 focus:bg-black/30"
-          aria-label={`Nom du tier ${label || tierId}`}
-          placeholder="Tier"
-          maxLength={16}
-        />
-        {canDelete ? (
-          <button
-            type="button"
-            onClick={() => onDelete(tierId)}
-            className="no-export mx-auto inline-flex rounded bg-black/25 p-1 transition hover:bg-black/35"
-            aria-label={`Supprimer le tier ${label || tierId}`}
-            title="Supprimer le tier"
-          >
-            <Trash2 size={12} />
-          </button>
-        ) : null}
+        <p className="select-none text-xl font-bold tracking-wide text-black/75">
+          {label || texts.rowFallbackLabel}
+        </p>
       </div>
       <SortableContext items={sortableIds} strategy={horizontalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`flex min-h-[72px] flex-1 flex-wrap gap-2 p-2 transition-colors ${
+          className={`flex min-h-[72px] flex-1 flex-wrap gap-2 bg-[#141414] p-2 transition-colors ${
             isOver
               ? "bg-[color:var(--accent)]/10"
-              : "bg-[color:var(--surface)]"
+              : ""
           }`}
         >
           {items.map((item) => (
@@ -195,10 +228,144 @@ function TierRow({
               item={item}
               onPreview={onPreview}
               playingPosition={playingPosition}
+              texts={texts}
             />
           ))}
         </div>
       </SortableContext>
+      <div className="no-export flex w-[46px] shrink-0 flex-col border-l border-black/80 bg-black">
+        <button
+          type="button"
+          onClick={() => onOpenEditor(tierId)}
+          className="inline-flex h-[24px] items-center justify-center border-b border-white/10 text-white/90 transition hover:bg-white/10"
+          aria-label={texts.rowSettings}
+          title={texts.rowSettings}
+        >
+          <Settings size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onMoveUp(tierId)}
+          disabled={!canMoveUp}
+          className="inline-flex h-[24px] items-center justify-center border-b border-white/10 text-white/90 transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label={texts.rowMoveUp}
+          title={texts.rowMoveUp}
+        >
+          <ChevronUp size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onMoveDown(tierId)}
+          disabled={!canMoveDown}
+          className="inline-flex h-[24px] items-center justify-center text-white/90 transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label={texts.rowMoveDown}
+          title={texts.rowMoveDown}
+        >
+          <ChevronDown size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TierRowEditorModal({
+  tier,
+  canDelete,
+  onClose,
+  onColorChange,
+  onLabelChange,
+  onDelete,
+  onClearRow,
+  onAddAbove,
+  onAddBelow,
+  texts,
+}: {
+  tier: TierConfig;
+  canDelete: boolean;
+  onClose: () => void;
+  onColorChange: (tierId: string, color: string) => void;
+  onLabelChange: (tierId: string, nextLabel: string) => void;
+  onDelete: (tierId: string) => void;
+  onClearRow: (tierId: string) => void;
+  onAddAbove: (tierId: string) => void;
+  onAddBelow: (tierId: string) => void;
+  texts: TierlistBoardTexts;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+      <div className="w-full max-w-4xl rounded-sm border border-white/10 bg-[#252222] px-5 py-4 text-white shadow-2xl">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-center text-[2rem] font-extrabold leading-none">
+            {texts.modalTitle}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded text-white/90 transition hover:bg-white/10"
+            aria-label="Fermer"
+          >
+            <X size={22} />
+          </button>
+        </div>
+        <div className="mb-6 flex flex-wrap gap-3">
+          {TIER_LABEL_COLORS.map((color) => {
+            const isSelected = color === tier.color;
+            return (
+              <button
+                key={color}
+                type="button"
+                onClick={() => onColorChange(tier.id, color)}
+                className={`h-9 w-9 rounded-full border-2 transition ${
+                  isSelected
+                    ? "scale-110 border-white"
+                    : "border-white/30 hover:border-white/80"
+                }`}
+                style={{ backgroundColor: color }}
+                aria-label={`Choisir la couleur ${color}`}
+              />
+            );
+          })}
+        </div>
+        <p className="mb-2 text-center text-[2rem] font-bold leading-none">{texts.modalEditLabel}</p>
+        <textarea
+          value={tier.label}
+          onChange={(e) => onLabelChange(tier.id, e.target.value)}
+          className="mb-5 min-h-[56px] w-full resize-y rounded border border-white/15 bg-[#ececec] px-3 py-2 text-2xl font-medium text-black outline-none focus:border-white/45"
+          aria-label={texts.modalLabelInputAria}
+          maxLength={24}
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => onDelete(tier.id)}
+            disabled={!canDelete}
+            className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {texts.deleteRow}
+          </button>
+          <button
+            type="button"
+            onClick={() => onClearRow(tier.id)}
+            className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
+          >
+            {texts.clearRowImages}
+          </button>
+          <button
+            type="button"
+            onClick={() => onAddAbove(tier.id)}
+            className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
+          >
+            {texts.addRowAbove}
+          </button>
+          <button
+            type="button"
+            onClick={() => onAddBelow(tier.id)}
+            className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
+          >
+            {texts.addRowBelow}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -208,18 +375,20 @@ function PoolZone({
   tracks,
   onPreview,
   playingPosition,
+  texts,
 }: {
   poolItems: TierItem[];
   tracks: TierItem[];
   onPreview: (pos: number, deezerTrackId: number, url: string) => void;
   playingPosition: number | null;
+  texts: TierlistBoardTexts;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: POOL_ID });
 
   return (
     <div className="mt-6">
       <p className="text-sm font-medium text-[color:var(--muted)] mb-2">
-        À placer ({poolItems.length} / {tracks.length})
+        {formatText(texts.poolTitle, { placed: poolItems.length, total: tracks.length })}
       </p>
       <SortableContext
         items={poolItems.map((i) => String(i.position))}
@@ -233,7 +402,7 @@ function PoolZone({
         >
           {poolItems.length === 0 ? (
             <p className="text-xs text-[color:var(--muted)] self-center">
-              Tous les morceaux ont été placés 🎉
+              {texts.allPlaced}
             </p>
           ) : (
             poolItems.map((item) => (
@@ -242,6 +411,7 @@ function PoolZone({
                 item={item}
                 onPreview={onPreview}
                 playingPosition={playingPosition}
+                texts={texts}
               />
             ))
           )}
@@ -257,11 +427,13 @@ export default function TierlistBoard({
   tracks,
   onSave,
   saving,
+  texts,
 }: {
   tierlistId?: string;
   tracks: TierItem[];
   onSave: (payload: TierlistSavePayload) => void;
   saving: boolean;
+  texts: TierlistBoardTexts;
 }) {
   const [tiers, setTiers] = useState<TierConfig[]>(() =>
     DEFAULT_TIERS.map((tier) => ({ ...tier })),
@@ -272,6 +444,7 @@ export default function TierlistBoard({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingPosition, setPlayingPosition] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [editingTierId, setEditingTierId] = useState<string | null>(null);
   const exportRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextTierIndexRef = useRef(DEFAULT_TIERS.length);
@@ -405,6 +578,10 @@ export default function TierlistBoard({
   };
 
   const handleAddTier = () => {
+    handleInsertTier(tiers.length);
+  };
+
+  const handleInsertTier = (atIndex: number) => {
     const index = nextTierIndexRef.current;
     const id = `tier-${index + 1}`;
     const tier: TierConfig = {
@@ -413,12 +590,29 @@ export default function TierlistBoard({
       color: getNextTierColor(index),
     };
     nextTierIndexRef.current += 1;
-    setTiers((prev) => [...prev, tier]);
+    setTiers((prev) => {
+      const next = [...prev];
+      next.splice(Math.max(0, Math.min(atIndex, next.length)), 0, tier);
+      return next;
+    });
     setState((prev) => ({ ...prev, [id]: [] }));
+  };
+
+  const handleAddTierAbove = (tierId: string) => {
+    const index = tiers.findIndex((tier) => tier.id === tierId);
+    if (index === -1) return;
+    handleInsertTier(index);
+  };
+
+  const handleAddTierBelow = (tierId: string) => {
+    const index = tiers.findIndex((tier) => tier.id === tierId);
+    if (index === -1) return;
+    handleInsertTier(index + 1);
   };
 
   const handleDeleteTier = (tierId: string) => {
     if (tiers.length <= 1) return;
+    setEditingTierId((prev) => (prev === tierId ? null : prev));
     setTiers((prev) => prev.filter((tier) => tier.id !== tierId));
     setState((prev) => {
       const removedItems = prev[tierId] ?? [];
@@ -438,6 +632,38 @@ export default function TierlistBoard({
     );
   };
 
+  const handleTierColorChange = (tierId: string, nextColor: string) => {
+    setTiers((prev) =>
+      prev.map((tier) =>
+        tier.id === tierId
+          ? { ...tier, color: nextColor }
+          : tier,
+      ),
+    );
+  };
+
+  const handleMoveTier = (tierId: string, direction: "up" | "down") => {
+    setTiers((prev) => {
+      const index = prev.findIndex((tier) => tier.id === tierId);
+      if (index === -1) return prev;
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      return arrayMove(prev, index, targetIndex);
+    });
+  };
+
+  const handleClearTier = (tierId: string) => {
+    setState((prev) => {
+      const rowItems = prev[tierId] ?? [];
+      if (!rowItems.length) return prev;
+      return {
+        ...prev,
+        [tierId]: [],
+        [POOL_ID]: [...(prev[POOL_ID] ?? []), ...rowItems],
+      };
+    });
+  };
+
   const handleDownload = async () => {
     if (!exportRef.current) return;
     setIsDownloading(true);
@@ -448,7 +674,7 @@ export default function TierlistBoard({
       });
     } catch {
       alert(
-        "Impossible de générer le PNG pour le moment. Vérifie que les pochettes sont bien chargées et réessaie.",
+        texts.pngError,
       );
     } finally {
       setIsDownloading(false);
@@ -457,6 +683,7 @@ export default function TierlistBoard({
 
   const poolItems = state[POOL_ID] ?? [];
   const placedCount = tracks.length - poolItems.length;
+  const editingTier = tiers.find((tier) => tier.id === editingTierId) ?? null;
 
   return (
     <DndContext
@@ -468,15 +695,15 @@ export default function TierlistBoard({
     >
       <div
         ref={exportRef}
-        className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3 md:p-4"
+        className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3 md:p-4"
       >
         <div className="mb-3 flex items-center justify-between gap-2">
           <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
-            Résultat tierlist
+            {texts.resultTitle}
           </p>
           <div className="flex items-center gap-2">
             <p className="text-xs text-[color:var(--muted)]">
-              {placedCount} / {tracks.length} classés
+              {formatText(texts.rankedCount, { placed: placedCount, total: tracks.length })}
             </p>
             <button
               type="button"
@@ -484,22 +711,25 @@ export default function TierlistBoard({
               className="no-export btn-ghost h-8 px-2 text-xs"
             >
               <Plus size={14} />
-              Ajouter un tier
+              {texts.addTier}
             </button>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {tiers.map((tier) => (
+        <div className="space-y-1">
+          {tiers.map((tier, index) => (
             <TierRow
               key={tier.id}
               tier={tier}
               items={state[tier.id] ?? []}
-              canDelete={tiers.length > 1}
-              onLabelChange={handleTierLabelChange}
-              onDelete={handleDeleteTier}
+              onOpenEditor={setEditingTierId}
+              onMoveUp={(tierId) => handleMoveTier(tierId, "up")}
+              onMoveDown={(tierId) => handleMoveTier(tierId, "down")}
+              canMoveUp={index > 0}
+              canMoveDown={index < tiers.length - 1}
               onPreview={handlePreview}
               playingPosition={playingPosition}
+              texts={texts}
             />
           ))}
         </div>
@@ -510,13 +740,14 @@ export default function TierlistBoard({
           tracks={tracks}
           onPreview={handlePreview}
           playingPosition={playingPosition}
+          texts={texts}
         />
       </div>
 
       {/* Actions */}
       <div className="no-export mt-6 flex flex-col gap-3 border-t border-[color:var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-[color:var(--muted)]">
-          {placedCount} / {tracks.length} morceaux classés
+          {formatText(texts.tracksRanked, { placed: placedCount, total: tracks.length })}
         </p>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <button
@@ -526,10 +757,10 @@ export default function TierlistBoard({
             className="btn-primary w-full justify-center text-sm disabled:opacity-50 sm:w-auto"
           >
             <Download size={14} />
-            {isDownloading ? "Génération…" : "Télécharger en PNG"}
+            {isDownloading ? texts.downloadGenerating : texts.downloadPng}
           </button>
           <button type="button" onClick={handleReset} className="btn-ghost w-full justify-center text-sm sm:w-auto">
-            <RotateCcw size={14} /> Réinitialiser
+            <RotateCcw size={14} /> {texts.reset}
           </button>
           <button
             type="button"
@@ -538,7 +769,7 @@ export default function TierlistBoard({
             className="btn-primary w-full justify-center text-sm disabled:opacity-50 sm:w-auto"
           >
             <Share2 size={14} />
-            {saving ? "Sauvegarde…" : "Sauvegarder et partager"}
+            {saving ? texts.saving : texts.saveShare}
           </button>
         </div>
       </div>
@@ -550,9 +781,24 @@ export default function TierlistBoard({
             item={activeItem}
             onPreview={() => {}}
             playingPosition={null}
+            texts={texts}
           />
         ) : null}
       </DragOverlay>
+      {editingTier ? (
+        <TierRowEditorModal
+          tier={editingTier}
+          canDelete={tiers.length > 1}
+          onClose={() => setEditingTierId(null)}
+          onColorChange={handleTierColorChange}
+          onLabelChange={handleTierLabelChange}
+          onDelete={handleDeleteTier}
+          onClearRow={handleClearTier}
+          onAddAbove={handleAddTierAbove}
+          onAddBelow={handleAddTierBelow}
+          texts={texts}
+        />
+      ) : null}
     </DndContext>
   );
 }

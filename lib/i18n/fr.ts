@@ -43,6 +43,8 @@ export interface Dictionary {
     ctaExplore: string;
     featureBrackets: string;
     featureBlindtests: string;
+    coversTopCountry: string;
+    coversTopFallback: string;
   };
   home: {
     badge: string;
@@ -96,6 +98,41 @@ export interface Dictionary {
     sectionBattleFeatSolo: string;
     sectionBattleFeatRooms: string;
     seeAll: string;
+  };
+  tierlistPage: {
+    helper: string;
+  };
+  tierlistPlayer: {
+    savedTitle: string;
+    savedSubtitle: string;
+    copy: string;
+    continueEditing: string;
+  };
+  tierlistBoard: {
+    listen: string;
+    rowFallbackLabel: string;
+    rowSettings: string;
+    rowMoveUp: string;
+    rowMoveDown: string;
+    modalTitle: string;
+    modalEditLabel: string;
+    modalLabelInputAria: string;
+    deleteRow: string;
+    clearRowImages: string;
+    addRowAbove: string;
+    addRowBelow: string;
+    poolTitle: string;
+    allPlaced: string;
+    pngError: string;
+    resultTitle: string;
+    rankedCount: string;
+    addTier: string;
+    tracksRanked: string;
+    downloadGenerating: string;
+    downloadPng: string;
+    reset: string;
+    saving: string;
+    saveShare: string;
   };
   auth: {
     loginTitle: string;
@@ -182,6 +219,8 @@ export const fr: Dictionary = {
     ctaExplore: "Explorer",
     featureBrackets: "Brackets",
     featureBlindtests: "BlindTests",
+    coversTopCountry: "Top albums du moment · {country}",
+    coversTopFallback: "Top albums du moment",
   },
   home: {
     badge: "Gratuit · Aucune pub · Juste la musique",
@@ -241,6 +280,42 @@ export const fr: Dictionary = {
     sectionBattleFeatSolo: "BattleFeat — Sessions solo",
     sectionBattleFeatRooms: "BattleFeat — Rooms",
     seeAll: "Voir tout",
+  },
+  tierlistPage: {
+    helper: "Glisse les morceaux dans les tiers · clique sur une pochette pour écouter l'extrait",
+  },
+  tierlistPlayer: {
+    savedTitle: "Tierlist sauvegardée 🎉",
+    savedSubtitle: "Partage le lien ci-dessous avec tes amis.",
+    copy: "Copier",
+    continueEditing: "Continuer à modifier",
+  },
+  tierlistBoard: {
+    listen: "Écouter",
+    rowFallbackLabel: "Tier",
+    rowSettings: "Modifier la ligne",
+    rowMoveUp: "Monter la ligne",
+    rowMoveDown: "Descendre la ligne",
+    modalTitle: "Choisir une couleur de fond du label :",
+    modalEditLabel: "Modifier le texte du label :",
+    modalLabelInputAria: "Texte du label",
+    deleteRow: "Supprimer la ligne",
+    clearRowImages: "Vider les images de la ligne",
+    addRowAbove: "Ajouter une ligne au-dessus",
+    addRowBelow: "Ajouter une ligne en dessous",
+    poolTitle: "À placer ({placed} / {total})",
+    allPlaced: "Tous les morceaux ont été placés 🎉",
+    pngError:
+      "Impossible de générer le PNG pour le moment. Vérifie que les pochettes sont bien chargées et réessaie.",
+    resultTitle: "Résultat tierlist",
+    rankedCount: "{placed} / {total} classés",
+    addTier: "Ajouter un tier",
+    tracksRanked: "{placed} / {total} morceaux classés",
+    downloadGenerating: "Génération…",
+    downloadPng: "Télécharger en PNG",
+    reset: "Réinitialiser",
+    saving: "Sauvegarde…",
+    saveShare: "Sauvegarder et partager",
   },
   auth: {
     loginTitle: "Connexion",

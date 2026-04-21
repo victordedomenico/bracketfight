@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import TierlistPlayer from "./TierlistPlayer";
 import type { TierItem } from "@/components/TierlistBoard";
 import SectionHeader from "@/components/ui/SectionHeader";
+import { getI18n } from "@/lib/i18n";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,6 +17,7 @@ export default async function TierlistPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { t } = await getI18n();
 
   const tl = await prisma.tierlist.findUnique({
     where: { id },
@@ -54,11 +56,16 @@ export default async function TierlistPage({
       <div className="mb-6">
         <SectionHeader title={tl.title} subtitle={tl.theme ?? undefined} />
         <p className="mt-1 text-xs text-[color:var(--muted)]">
-          Glisse les morceaux dans les tiers · clic sur une pochette pour écouter l&apos;extrait
+          {t.tierlistPage.helper}
         </p>
       </div>
 
-      <TierlistPlayer tierlistId={tl.id} tracks={tracks} />
+      <TierlistPlayer
+        tierlistId={tl.id}
+        tracks={tracks}
+        boardTexts={t.tierlistBoard}
+        playerTexts={t.tierlistPlayer}
+      />
     </div>
   );
 }

@@ -201,6 +201,68 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
+@keyframes home-covers-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.home-covers-mask {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 0.15rem 0;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+
+.home-covers-track {
+  display: flex;
+  width: max-content;
+  gap: 0.7rem;
+  animation: home-covers-marquee 34s linear infinite;
+}
+
+.home-covers-mask:hover .home-covers-track {
+  animation-play-state: paused;
+}
+
+.home-cover-item {
+  display: block;
+  height: 4.6rem;
+  width: 4.6rem;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 0.8rem;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  transform: translateZ(0);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.home-cover-item:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(255,255,255,0.3);
+}
+
+@media (min-width: 768px) {
+  .home-cover-item {
+    height: 5.3rem;
+    width: 5.3rem;
+  }
+}
+
 /* ─── Utilities ──────────────────────────────────────────────────────────────── */
 @layer utilities {
 
