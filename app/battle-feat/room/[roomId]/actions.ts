@@ -88,11 +88,14 @@ async function touchPresenceAndResolve(roomId: string, playerId: string): Promis
   const isHost = playerId === room.hostId;
   const isGuest = playerId === room.guestId;
 
+  // Use raw SQL so the heartbeat does NOT bump `updated_at` — otherwise the
+  // client-side turn timer (which is anchored on `updatedAt`) would reset every
+  // time a player sends a heartbeat.
   if (isHost && shouldHeartbeat(room.hostLastSeenAt, nowMs)) {
-    await prisma.battleFeatRoom.update({ where: { id: room.id }, data: { hostLastSeenAt: now } });
+    await prisma.$executeRaw`UPDATE battle_feat_rooms SET host_last_seen_at = ${now} WHERE id = ${room.id}::uuid`;
     room.hostLastSeenAt = now;
   } else if (isGuest && shouldHeartbeat(room.guestLastSeenAt, nowMs)) {
-    await prisma.battleFeatRoom.update({ where: { id: room.id }, data: { guestLastSeenAt: now } });
+    await prisma.$executeRaw`UPDATE battle_feat_rooms SET guest_last_seen_at = ${now} WHERE id = ${room.id}::uuid`;
     room.guestLastSeenAt = now;
   }
 

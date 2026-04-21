@@ -40,7 +40,9 @@ import { usePreviewVolume } from "@/lib/audio-volume";
 
 const TURN_SECONDS = 20;
 const PRESENCE_GRACE_SECONDS = 45;
-const PRESENCE_WARNING_SECONDS = 12;
+// Must stay comfortably above the server heartbeat interval (~10s) + poll
+// delay (~2.5s) to avoid false "opponent disconnected" warnings.
+const PRESENCE_WARNING_SECONDS = 20;
 
 function ArtistBadge({
   name,

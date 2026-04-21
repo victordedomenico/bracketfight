@@ -58,17 +58,14 @@ async function touchPresenceAndResolve(roomId: string, playerId: string): Promis
   const isHost = playerId === room.hostId;
   const isGuest = playerId === room.guestId;
 
+  // Use raw SQL so the heartbeat does NOT bump `updated_at`. The polling loop
+  // watches `updatedAt` to detect real state changes and the client would
+  // otherwise resync the room (and flicker) on every heartbeat.
   if (isHost && shouldHeartbeat(room.hostLastSeenAt, nowMs)) {
-    await prisma.blindtestRoom.update({
-      where: { id: room.id },
-      data: { hostLastSeenAt: now },
-    });
+    await prisma.$executeRaw`UPDATE blindtest_rooms SET host_last_seen_at = ${now} WHERE id = ${room.id}::uuid`;
     room.hostLastSeenAt = now;
   } else if (isGuest && shouldHeartbeat(room.guestLastSeenAt, nowMs)) {
-    await prisma.blindtestRoom.update({
-      where: { id: room.id },
-      data: { guestLastSeenAt: now },
-    });
+    await prisma.$executeRaw`UPDATE blindtest_rooms SET guest_last_seen_at = ${now} WHERE id = ${room.id}::uuid`;
     room.guestLastSeenAt = now;
   }
 

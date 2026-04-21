@@ -36,7 +36,9 @@ import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 
 const TIMER_SECONDS = 30;
 const PRESENCE_GRACE_SECONDS = 45;
-const PRESENCE_WARNING_SECONDS = 12;
+// Must stay comfortably above the server heartbeat interval (~10s) + poll
+// delay (~2.5s) to avoid false "opponent disconnected" warnings.
+const PRESENCE_WARNING_SECONDS = 20;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
