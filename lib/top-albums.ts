@@ -1,4 +1,5 @@
 const DEEZER_API_BASE_URL = "https://api.deezer.com";
+const DEEZER_TOP_FRANCE_PLAYLIST_ID = "1109890291";
 
 export type TopAlbum = {
   id: string;
@@ -35,11 +36,62 @@ export function detectCountryCode(headers: Headers): string {
 export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Promise<TopAlbum[]> {
   const safeCountry = countryCode.toUpperCase();
   const safeLimit = Math.max(5, Math.min(limit, 50));
+
+  const fetchTopFranceAlbums = async () => {
+    const endpoint = `${DEEZER_API_BASE_URL}/playlist/${DEEZER_TOP_FRANCE_PLAYLIST_ID}/tracks?limit=100`;
+    const response = await fetch(endpoint, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as {
+      data?: Array<{
+        album?: {
+          id?: number;
+          title?: string;
+          cover_medium?: string | null;
+          cover_big?: string | null;
+          cover_xl?: string | null;
+        };
+        artist?: { name?: string };
+        link?: string;
+      }>;
+    };
+  };
+
+  if (safeCountry === "FR") {
+    const playlistTracks = await fetchTopFranceAlbums();
+    const uniqueAlbums = new Map<string, TopAlbum>();
+
+    for (const track of playlistTracks?.data ?? []) {
+      const albumId = track.album?.id;
+      const title = track.album?.title;
+      const artist = track.artist?.name;
+      const coverUrl = track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium;
+      const url = track.link;
+      if (!albumId || !title || !coverUrl || !url) continue;
+      const key = String(albumId);
+      if (uniqueAlbums.has(key)) continue;
+      uniqueAlbums.set(key, {
+        id: key,
+        title,
+        artist: artist ?? "",
+        coverUrl,
+        url,
+      });
+      if (uniqueAlbums.size >= safeLimit) break;
+    }
+
+    if (uniqueAlbums.size > 0) {
+      return [...uniqueAlbums.values()];
+    }
+  }
+
   const fetchCharts = async (scope: string) => {
     const endpoint = `${DEEZER_API_BASE_URL}/chart/${scope}/albums?limit=${safeLimit}`;
     const response = await fetch(endpoint, {
       headers: { Accept: "application/json" },
-      next: { revalidate: 1800 },
+      cache: "no-store",
     });
     if (!response.ok) return null;
     return (await response.json()) as {
