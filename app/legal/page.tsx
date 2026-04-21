@@ -40,6 +40,13 @@ export default function LegalPage() {
               </a>
               .
             </p>
+            <p>
+              Un parcours dedie est disponible sur{" "}
+              <a href="/privacy-rights" style={{ color: "var(--accent)" }} className="hover:underline">
+                Exercer mes droits RGPD
+              </a>
+              .
+            </p>
           </section>
 
           <section className="space-y-3">

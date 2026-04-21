@@ -1,7 +1,12 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { getCookieConsent, hasPreferencesConsent, setCookieConsent } from "@/lib/cookie-consent";
+import {
+  COOKIE_CONSENT_VERSION,
+  getCookieConsent,
+  hasPreferencesConsent,
+  setCookieConsent,
+} from "@/lib/cookie-consent";
 
 export async function setLocale(locale: "fr" | "en") {
   const consent = await getCookieConsent();
@@ -45,6 +50,7 @@ export async function getCurrentCookieConsent() {
     essential: true,
     preferences: Boolean(consent?.preferences),
     analytics: Boolean(consent?.analytics),
+    version: consent?.version ?? COOKIE_CONSENT_VERSION,
     updatedAt: consent?.updatedAt ?? null,
   };
 }

@@ -3,8 +3,14 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import SiteSidebar from "@/components/SiteSidebar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
-import { getCookieConsent, hasPreferencesConsent } from "@/lib/cookie-consent";
+import Footer from "@/components/Footer";
+import {
+  getCookieConsent,
+  hasAnalyticsConsent,
+  hasPreferencesConsent,
+} from "@/lib/cookie-consent";
 import { Analytics } from "@vercel/analytics/next";
+import { getLocale } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: "MusiKlash — Fais s'affronter tes sons",
@@ -20,8 +26,9 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const cookieConsent = await getCookieConsent();
   const canUsePreferenceCookies = hasPreferencesConsent(cookieConsent);
+  const canUseAnalyticsCookies = hasAnalyticsConsent(cookieConsent);
   const theme = canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
-  const locale = canUsePreferenceCookies && cookieStore.get("locale")?.value === "en" ? "en" : "fr";
+  const locale = await getLocale();
 
   return (
     <html
@@ -33,10 +40,13 @@ export default async function RootLayout({
       <body className="min-h-full">
         <div className="site-layout">
           <SiteSidebar theme={theme} locale={locale} />
-          <main className="site-main">{children}</main>
+          <main className="site-main">
+            {children}
+            <Footer />
+          </main>
         </div>
         <CookieConsentBanner initialConsent={cookieConsent} />
-        <Analytics />
+        {canUseAnalyticsCookies ? <Analytics /> : null}
       </body>
     </html>
   );

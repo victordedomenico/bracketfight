@@ -1,127 +1,107 @@
-# BracketFight
+# MusiKlash (BracketFight)
 
-Plateforme de tournois musicaux (brackets à élimination directe), clone open-source inspiré de Spotifights. Stack Next.js 15 + Supabase + Deezer.
+Plateforme de jeux musicaux construite avec Next.js, Supabase, Prisma et l'API Deezer.
 
-## Démarrage local (Docker)
+## Fonctionnalités principales
 
-Tout tourne en local via la CLI Supabase, qui orchestre elle-même les conteneurs Docker (Postgres, GoTrue pour l'auth, PostgREST, Studio). **Aucun compte Supabase.com requis.**
+- Brackets musicaux (tournois a elimination directe)
+- Tierlists personnalisables
+- Blindtests solo et multijoueur
+- BattleFeat (solo et rooms)
+- Bibliotheque personnelle et exploration de contenus publics
+- Authentification Supabase (email/mot de passe et flux invite)
+- Interface FR/EN + gestion des preferences utilisateur
 
-### Pré-requis
+## Stack technique
 
-- Node 20+ et npm
-- Docker Desktop démarré (ou Colima/Orbstack en alternative)
+- Next.js 16 (App Router) + React 19
+- TypeScript + Tailwind CSS 4
+- Prisma 7 + PostgreSQL
+- Supabase (Auth + DB locale via CLI)
+- Vitest pour les tests unitaires
 
-### 1. Installer les dépendances
+## Demarrage local
+
+### Prerequis
+
+- Node.js 20+
+- npm
+- Docker Desktop (ou alternative compatible)
+- Supabase CLI
+
+### 1) Installer les dependances
 
 ```bash
 npm install
 ```
 
-### 2. Démarrer la stack Supabase en local
+### 2) Demarrer Supabase en local
 
 ```bash
 npm run db:start
 ```
 
-La première exécution télécharge les images Docker (~1 Go, quelques minutes). Ensuite c'est quasi-instantané. À la fin, la CLI affiche :
+La commande affiche notamment les URL locales (API, DB, Studio) ainsi que les cles necessaires.
 
-```
-API URL: http://127.0.0.1:54321
-DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-Studio URL: http://127.0.0.1:54323
-anon key: eyJhbGciOi…
-service_role key: eyJhbGciOi…
-```
+### 3) Configurer les variables d'environnement
 
-### 3. Configurer l'environnement Next.js
+Creer un fichier `.env.local` a la racine avec au minimum:
 
-```bash
-cp .env.local.example .env.local
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
 ```
 
-Puis colle la valeur de `anon key` dans `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Le `URL` est déjà bon par défaut.
+Optionnel (seed/admin):
 
-Tu peux réafficher ces valeurs à tout moment avec :
-
-```bash
-npm run db:status
+```env
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
-### 4. Lancer Next.js
+### 4) Lancer l'application
 
 ```bash
 npm run dev
 ```
 
-Ouvre [http://localhost:3000](http://localhost:3000). Les tables sont déjà créées (la migration `supabase/migrations/20250101000000_init.sql` est appliquée automatiquement au `db:start`).
+Application: [http://localhost:3000](http://localhost:3000)  
+Studio Supabase local: [http://127.0.0.1:54323](http://127.0.0.1:54323)
 
-Studio Supabase : [http://127.0.0.1:54323](http://127.0.0.1:54323) pour inspecter les tables, gérer les utilisateurs, etc.
+## Scripts utiles
 
-## Commandes Docker / base
+- `npm run dev` - lance le serveur de developpement
+- `npm run build` - build de production
+- `npm run start` - demarre l'app en mode production
+- `npm run lint` - lance ESLint
+- `npm run test` - lance les tests Vitest
+- `npm run test:watch` - tests en mode watch
+- `npm run db:start` - demarre la stack Supabase locale
+- `npm run db:stop` - arrete la stack Supabase locale
+- `npm run db:status` - affiche l'etat de la stack locale
+- `npm run db:reset` - reset complet de la base locale
+- `npm run db:up` - applique les migrations locales
+- `npm run db:migrate` - cree un nouveau fichier de migration
 
-| Commande | Effet |
-|---|---|
-| `npm run db:start` | Lance les conteneurs Supabase (Docker) et applique les migrations |
-| `npm run db:stop` | Arrête les conteneurs |
-| `npm run db:status` | Affiche URL, clés, ports |
-| `npm run db:reset` | **Détruit** la base locale et rejoue toutes les migrations (+ seed.sql) |
-| `npm run db:migrate nom_migration` | Crée un nouveau fichier de migration vide dans `supabase/migrations/` |
+## Structure du projet (simplifiee)
 
-## Mise en production
-
-Le même dossier `supabase/` est le point de départ pour la prod :
-
-- **Option A — Supabase Cloud** : `npx supabase link --project-ref …` puis `npx supabase db push` pour pousser tes migrations.
-- **Option B — self-hosted Docker** : clone [supabase/supabase](https://github.com/supabase/supabase/tree/master/docker), copie ton `migrations/` dedans, puis `docker compose up -d`.
-
-Dans les deux cas le code applicatif est inchangé — seules les variables `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` pointent vers l'instance de prod.
-
-## Scripts
-
-- `npm run dev` — serveur de développement
-- `npm run build` — build de production
-- `npm run start` — serveur de production
-- `npm run lint` — ESLint
-- `npm test` — tests unitaires Vitest (`lib/bracket.ts`)
-
-## Architecture
-
-```
-app/
-  page.tsx                          accueil
-  guide/                            guide pédagogique
-  login/, signup/, (auth)/actions   auth via Supabase + server actions
-  explore/                          catalogue public (brackets visibility='public')
-  create-bracket/                   création (protégée)
-  my-brackets/                      bibliothèque (protégée)
-  bracket-game/[id]/                page de jeu (duels, vote, champion)
-  api/deezer/search/                proxy Deezer (contourne le CORS)
-components/
-  Header, Footer, BracketCard       navigation / affichage
-  TrackPicker                       recherche Deezer + sélection
-  MatchCard, BracketGame            duels et orchestration des rounds
-lib/
-  supabase/{client,server,middleware}.ts
-  deezer.ts                         typage + fetch serveur
-  bracket.ts                        logique pure (seeds, rounds) + tests
-supabase/migrations/0001_init.sql   schéma + RLS
-middleware.ts                       refresh de session Supabase
+```txt
+app/                 Pages App Router + routes API
+components/          Composants UI et metier
+lib/                 Helpers (i18n, cookies, Supabase, Prisma, etc.)
+prisma/              Schema Prisma, migrations, seed
 ```
 
-## API musicale
+## Donnees et legal
 
-Les pistes proviennent de l'[API Deezer publique](https://developers.deezer.com/api). Aucune clé n'est requise. Les extraits 30 s (MP3) sont diffusés directement depuis `dzcdn.net`.
+- Les extraits musicaux sont servis via l'API Deezer.
+- Les pages legales sont disponibles dans l'application:
+  - `/privacy`
+  - `/cookies`
+  - `/legal`
+  - `/terms`
+  - `/privacy-rights`
 
-## Périmètre v1 (ce qui est livré)
+## Licence
 
-- Authentification email + mot de passe
-- Création de brackets de 4, 8, 16 ou 32 pistes
-- Recherche Deezer + preview audio
-- Jeu : duels round par round jusqu'au champion
-- Bibliothèque personnelle avec filtre privé/public
-- Explorateur public avec recherche texte
-- Guide pédagogique
-
-## Non couvert (v2+)
-
-Tierlists, blindtests, StreamFights live, i18n FR/EN, stats globales.
+Ce projet est distribue sous licence MIT. Voir le fichier `LICENSE`.

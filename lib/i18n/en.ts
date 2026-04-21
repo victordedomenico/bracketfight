@@ -178,6 +178,7 @@ export const en: Dictionary = {
     privacy: "Privacy",
     terms: "Terms",
     legalNotice: "Legal notice",
+    privacyRights: "Exercise my GDPR rights",
     cookieSettings: "Cookie settings",
     allRightsReserved: "All rights reserved",
   },

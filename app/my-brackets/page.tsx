@@ -18,7 +18,7 @@ import { Plus, Play } from "lucide-react";
 export const metadata: Metadata = { title: "Ma bibliothèque — MusiKlash" };
 
 type Visibility = "all" | "private" | "public";
-type Tab = "brackets" | "tierlists" | "blindtests" | "battlefeat";
+type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat";
 
 export default async function MyBracketsPage({
   searchParams,
@@ -118,6 +118,12 @@ export default async function MyBracketsPage({
   })) as BattleFeatRoomSummary[];
 
   const libraryEditor = Boolean(activePlayerId);
+  const totalCount =
+    bracketList.length +
+    tierlistList.length +
+    blindtestList.length +
+    battleFeatList.length +
+    battleFeatRoomList.length;
 
   const createHref =
     tab === "tierlists"
@@ -172,6 +178,7 @@ export default async function MyBracketsPage({
           className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
           style={{ borderColor: "#283041", background: "#181b24" }}
         >
+        <TabItem current={tab} value="all" label={`Tous (${totalCount})`} />
         <TabItem current={tab} value="brackets" label={`Brackets (${brackets.length})`} />
         <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
         <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length})`} />
@@ -189,7 +196,76 @@ export default async function MyBracketsPage({
       </div>
       </div>
 
-      {tab === "brackets" ? (
+      {tab === "all" ? (
+        totalCount === 0 ? (
+          <EmptyState
+            label="Aucun élément dans ta bibliothèque pour le moment"
+            cta="Créer un bracket"
+            href="/create-bracket"
+          />
+        ) : (
+          <div className="mt-8 space-y-9">
+            {bracketList.length > 0 ? (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-bold">Brackets</h2>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
+                  {bracketList.map((b) => (
+                    <BracketCard key={b.id} b={b} libraryEditor={libraryEditor} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {tierlistList.length > 0 ? (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-bold">Tierlists</h2>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
+                  {tierlistList.map((t) => (
+                    <TierlistCard key={t.id} t={t} libraryEditor={libraryEditor} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {blindtestList.length > 0 ? (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-bold">Blindtests</h2>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
+                  {blindtestList.map((b) => (
+                    <BlindtestCard key={b.id} b={b} libraryEditor={libraryEditor} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {battleFeatList.length > 0 || battleFeatRoomList.length > 0 ? (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-bold">BattleFeat</h2>
+                {battleFeatList.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-[color:var(--muted)]">Sessions solo</p>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                      {battleFeatList.map((s) => (
+                        <BattleFeatSoloCard key={s.id} s={s} libraryEditor={libraryEditor} />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {battleFeatRoomList.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-[color:var(--muted)]">Rooms</p>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                      {battleFeatRoomList.map((room) => (
+                        <BattleFeatRoomCard key={room.id} r={room} libraryEditor={libraryEditor} />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+          </div>
+        )
+      ) : tab === "brackets" ? (
         bracketList.length === 0 ? (
           <EmptyState
             label="Aucun bracket pour le moment"

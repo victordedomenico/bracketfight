@@ -1,22 +1,17 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import {
-  CirclePlus,
-  Library,
-  Play,
-  Trophy,
-} from "lucide-react";
+import { CirclePlus } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
 import { detectCountryCode, getTopAlbumsByCountry } from "@/lib/top-albums";
 
 export default async function Home() {
-  const { t } = await getI18n();
+  const { t, locale } = await getI18n();
   const requestHeaders = await headers();
   const countryCode = detectCountryCode(requestHeaders);
   const topAlbums = await getTopAlbumsByCountry(countryCode, 18);
   const countryName =
     typeof Intl.DisplayNames === "function"
-      ? new Intl.DisplayNames(["fr", "en"], { type: "region" }).of(countryCode) ?? countryCode
+      ? new Intl.DisplayNames([locale], { type: "region" }).of(countryCode) ?? countryCode
       : countryCode;
   const topCoversTitle =
     countryName && countryName !== countryCode
@@ -140,71 +135,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <FeatureTile
-          href="/explore"
-          title={t.homeHero.featureBrackets}
-          icon={<Trophy size={38} />}
-          tone="amber"
-        />
-        <FeatureTile
-          href="/my-brackets"
-          title={t.nav.myLibrary}
-          icon={<Library size={38} />}
-          tone="blue"
-        />
-        <FeatureTile
-          href="/blindtest/room"
-          title={t.homeHero.featureBlindtests}
-          icon={<Play size={38} />}
-          tone="violet"
-        />
-        <FeatureTile
-          href="/battle-feat"
-          title={t.nav.battleFeat}
-          icon={<Play size={38} />}
-          tone="rose"
-        />
-      </section>
     </div>
-  );
-}
-
-type FeatureTileProps = Readonly<{
-  href: string;
-  title: string;
-  icon: React.ReactNode;
-  tone: "amber" | "blue" | "violet" | "rose";
-}>;
-
-function FeatureTile({ href, title, icon, tone }: FeatureTileProps) {
-  const accent = {
-    amber: "#f59e0b",
-    blue: "#3b82f6",
-    violet: "#ef4444",
-    rose: "#ff3b74",
-  } as const;
-
-  return (
-    <Link
-      href={href}
-      className="rounded-[30px] border p-8 transition hover:-translate-y-0.5"
-      style={{
-        minHeight: "210px",
-        borderColor: "var(--border-strong)",
-        background: `linear-gradient(180deg, color-mix(in srgb, ${accent[tone]} 14%, var(--surface)) 0%, var(--surface) 100%)`,
-        color: "var(--foreground)",
-      }}
-    >
-      <div className="mb-8" style={{ color: accent[tone] }}>
-        {icon}
-      </div>
-      <h3
-        className="text-5xl font-black tracking-[-0.03em]"
-        style={{ color: "var(--foreground)" }}
-      >
-        {title}
-      </h3>
-    </Link>
   );
 }

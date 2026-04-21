@@ -168,6 +168,7 @@ export interface Dictionary {
     privacy: string;
     terms: string;
     legalNotice: string;
+    privacyRights: string;
     cookieSettings: string;
     allRightsReserved: string;
   };
@@ -351,6 +352,7 @@ export const fr: Dictionary = {
     privacy: "Confidentialité",
     terms: "Conditions",
     legalNotice: "Mentions légales",
+    privacyRights: "Exercer mes droits RGPD",
     cookieSettings: "Gestion des cookies",
     allRightsReserved: "Tous droits réservés",
   },

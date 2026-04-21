@@ -87,6 +87,18 @@ export default async function SettingsPage({
             {error}
           </p>
         ) : null}
+
+        <div className="rounded-xl border p-4 text-sm" style={{ borderColor: "var(--border)" }}>
+          <p className="font-semibold">Vie privee et donnees personnelles</p>
+          <p className="mt-1 text-[color:var(--muted)]">
+            Vous pouvez modifier vos cookies, demander un export ou exercer vos droits RGPD depuis la
+            page dediee.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href="/cookies" className="btn-ghost">Gestion des cookies</a>
+            <a href="/privacy-rights" className="btn-ghost">Exercer mes droits RGPD</a>
+          </div>
+        </div>
       </div>
     </div>
   );

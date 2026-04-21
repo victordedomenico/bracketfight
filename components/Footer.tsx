@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Music } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
+import { BrandMark } from "@/components/BrandLogo";
 
 export default async function Footer() {
   const { t } = await getI18n();
   const f = t.footer;
+  const sidebar = t.sidebar;
 
   const columns = [
     {
@@ -34,6 +35,7 @@ export default async function Footer() {
         { label: f.privacy, href: "/privacy" },
         { label: f.terms, href: "/terms" },
         { label: f.legalNotice, href: "/legal" },
+        { label: f.privacyRights, href: "/privacy-rights" },
         { label: f.cookieSettings, href: "/cookies" },
       ],
     },
@@ -54,16 +56,19 @@ export default async function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 font-bold"
-              style={{ fontSize: "1rem", letterSpacing: "-0.02em", color: "var(--foreground)" }}
+              className="inline-flex items-center gap-3"
+              style={{ color: "var(--foreground)" }}
             >
-              <span
-                className="flex h-6 w-6 items-center justify-center rounded-md"
-                style={{ background: "linear-gradient(135deg, #ef4444, #f97316)" }}
-              >
-                <Music size={13} className="text-white" />
-              </span>
-              Musi<span style={{ color: "var(--accent)" }}>Klash</span>
+              <BrandMark size={36} />
+              <div>
+                <p className="text-[1.2rem] font-black leading-none tracking-tight">MusiKlash</p>
+                <p
+                  className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.22em]"
+                  style={{ color: "var(--muted)" }}
+                >
+                  {sidebar.tagline}
+                </p>
+              </div>
             </Link>
             <p
               className="mt-3 text-sm leading-relaxed"
@@ -130,6 +135,8 @@ export default async function Footer() {
               { label: f.privacy, href: "/privacy" },
               { label: f.terms, href: "/terms" },
               { label: f.legalNotice, href: "/legal" },
+              { label: f.privacyRights, href: "/privacy-rights" },
+              { label: f.cookieSettings, href: "/cookies" },
               { label: f.contact, href: "mailto:contact@musiklash.com" },
             ].map((link, i, arr) => (
               <span key={link.label} className="inline-flex items-center gap-4">
@@ -145,14 +152,6 @@ export default async function Footer() {
                 )}
               </span>
             ))}
-            <span style={{ color: "var(--border-strong)" }}>·</span>
-            <a
-              href="mailto:contact@musiklash.com"
-              className="hover:underline"
-              style={{ color: "var(--muted)" }}
-            >
-              contact@musiklash.com
-            </a>
           </div>
         </div>
       </div>
