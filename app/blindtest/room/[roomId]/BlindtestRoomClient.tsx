@@ -22,6 +22,7 @@ import Link from "next/link";
 import type { BlindtestRoomSnapshot, BlindtestRoomBroadcastPayload } from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import { POINTS_TITLE, POINTS_ARTIST } from "@/components/BlindtestGame";
+import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import {
   joinRoom,
   startGame,
@@ -618,9 +619,11 @@ export default function BlindtestRoomClient({
   if (room.status === "finished") {
     const iWon = room.winnerId === userId;
     const isDraw = !room.winnerId;
+    const outcome = isDraw ? "draw" : iWon ? "victory" : "defeat";
 
     return (
       <div className="space-y-6">
+        <ChallengeOutcomeFx outcome={outcome} />
         <div className="card p-8 text-center">
           <Trophy
             size={48}

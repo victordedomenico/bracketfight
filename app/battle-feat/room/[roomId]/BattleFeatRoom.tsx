@@ -21,6 +21,7 @@ import {
   Volume2,
 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
+import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import type {
   ArtistResult,
   BattleFeatRoomSnapshot,
@@ -464,15 +465,26 @@ export default function BattleFeatRoom({
 
   if (room.status === "finished") {
     const iWon = room.winnerId === userId;
+    const isDraw = !room.winnerId;
+    const outcome = isDraw ? "draw" : iWon ? "victory" : "defeat";
 
     return (
       <div className="space-y-6">
+        <ChallengeOutcomeFx outcome={outcome} />
         <div className="card p-8 text-center">
           <Trophy
             size={48}
-            className={`mx-auto mb-4 ${iWon ? "text-yellow-400" : "text-[color:var(--muted)]"}`}
+            className={`mx-auto mb-4 ${
+              isDraw
+                ? "text-sky-400"
+                : iWon
+                  ? "text-yellow-400"
+                  : "text-[color:var(--muted)]"
+            }`}
           />
-          <h2 className="text-2xl font-black">{iWon ? "Victoire !" : "Défaite"}</h2>
+          <h2 className="text-2xl font-black">
+            {isDraw ? "Égalité !" : iWon ? "Victoire !" : "Défaite"}
+          </h2>
           <div className="mt-4 flex items-center justify-center gap-8">
             <div className="text-center">
               <p className="text-2xl font-black">{room.hostScore}</p>
