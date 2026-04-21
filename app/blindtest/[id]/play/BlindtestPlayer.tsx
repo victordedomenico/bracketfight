@@ -7,6 +7,7 @@ import BlindtestGame, {
   type BlindtestAnswer,
   POINTS_PER_TRACK,
 } from "@/components/BlindtestGame";
+import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import { saveBlindtestSession } from "./actions";
 import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 import { Trophy, RotateCcw, Share2, Check, X } from "lucide-react";
@@ -52,6 +53,7 @@ export default function BlindtestPlayer({
   if (finalAnswers) {
     const maxScore = tracks.length * POINTS_PER_TRACK;
     const pct = Math.round((finalScore / maxScore) * 100);
+    const outcome = pct >= 50 ? "victory" : "defeat";
     const shareUrl =
       sessionId && typeof window !== "undefined"
         ? `${window.location.origin}/blindtest/${blindtestId}/results/${sessionId}`
@@ -59,6 +61,7 @@ export default function BlindtestPlayer({
 
     return (
       <div className="space-y-6">
+        <ChallengeOutcomeFx outcome={outcome} />
         <div className="card p-8 text-center">
           <Trophy className="mx-auto text-yellow-400" size={48} />
           <p className="mt-4 text-4xl font-black">

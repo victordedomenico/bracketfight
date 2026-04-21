@@ -206,6 +206,43 @@ body {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes challenge-confetti-fall {
+  0% {
+    transform: translate3d(0, -12vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(8px, 110vh, 0) rotate(560deg);
+    opacity: 0;
+  }
+}
+
+@keyframes challenge-defeat-fall {
+  0% {
+    transform: translate3d(0, -12vh, 0) scale(0.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.72;
+  }
+  100% {
+    transform: translate3d(0, 100vh, 0) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@keyframes challenge-defeat-pulse {
+  0% {
+    opacity: 0.32;
+  }
+  100% {
+    opacity: 0.62;
+  }
+}
+
 .home-covers-mask {
   position: relative;
   overflow: hidden;

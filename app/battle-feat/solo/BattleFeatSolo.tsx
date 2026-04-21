@@ -16,6 +16,7 @@ import {
   Volume2,
 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
+import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import type { ArtistResult, FeatMove } from "@/lib/battle-feat";
 import { saveSoloSession } from "./actions";
 import { usePreviewVolume } from "@/lib/audio-volume";
@@ -506,8 +507,11 @@ export default function BattleFeatSolo() {
 
   // ── GAME OVER ─────────────────────────────────────────────────────────────
   if (phase === "game-over") {
+    const outcome = gameOverWinner === "player" ? "victory" : "defeat";
+
     return (
       <div className="space-y-6">
+        <ChallengeOutcomeFx outcome={outcome} />
         <div className="card p-8 text-center">
           <Trophy
             size={48}
