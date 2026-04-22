@@ -27,6 +27,7 @@ model Profile {
   blindtests                Blindtest[]
   blindtestSessions         BlindtestSession[]
   soloSessions              BattleFeatSoloSession[]
+  soloChallenges            BattleFeatSoloChallenge[]
   hostedRooms               BattleFeatRoom[]        @relation("RoomHost")
   hostedBlindtestRooms      BlindtestRoom[]         @relation("BlindtestRoomHost")
 
@@ -264,6 +265,7 @@ model RapFeat {
 model BattleFeatSoloSession {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   playerId         String?  @map("player_id") @db.Uuid
+  challengeId      String?  @map("challenge_id") @db.Uuid
   difficulty       Int      @db.SmallInt
   startingArtistId String   @map("starting_artist_id") // Deezer ID (text)
   moves            Json     @default("[]") @db.JsonB
@@ -273,12 +275,33 @@ model BattleFeatSoloSession {
   visibility       String   @default("private")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  player Profile? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  player    Profile?                 @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  challenge BattleFeatSoloChallenge? @relation(fields: [challengeId], references: [id], onDelete: SetNull)
 
   @@index([playerId])
+  @@index([challengeId])
   @@index([visibility, createdAt(sort: Desc)])
   @@index([difficulty, score(sort: Desc)])
   @@map("battle_feat_solo_sessions")
+}
+
+model BattleFeatSoloChallenge {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId            String   @map("owner_id") @db.Uuid
+  title              String
+  difficulty         Int      @db.SmallInt
+  startingArtistId   String   @map("starting_artist_id") // Deezer ID (text)
+  startingArtistName String   @map("starting_artist_name")
+  startingArtistPic  String?  @map("starting_artist_pic")
+  visibility         String   @default("private")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  owner    Profile                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  sessions BattleFeatSoloSession[]
+
+  @@index([ownerId])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@map("battle_feat_solo_challenges")
 }
 
 model BattleFeatRoom {

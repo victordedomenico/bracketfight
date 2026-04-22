@@ -21,6 +21,8 @@ export interface Dictionary {
     modeSoloAiDesc: string;
     modeMulti: string;
     modeMultiDesc: string;
+    modeChallenge: string;
+    modeChallengeDesc: string;
     settings: string;
     assistance: string;
     login: string;
@@ -83,6 +85,7 @@ export interface Dictionary {
     createBracket: string;
     createTierlist: string;
     createBlindtest: string;
+    createBattleFeatChallenge: string;
     battleFeatTitle: string;
     battleFeatDesc: string;
     playSolo: string;
@@ -95,9 +98,25 @@ export interface Dictionary {
     sectionBrackets: string;
     sectionTierlists: string;
     sectionBlindtests: string;
+    sectionBlindtestCreations: string;
+    sectionBlindtestRooms: string;
     sectionBattleFeatSolo: string;
+    sectionBattleFeatChallenges: string;
     sectionBattleFeatRooms: string;
     seeAll: string;
+  };
+  room: {
+    spectatorTitle: string;
+    spectatorSubtitle: string;
+    spectatorWaitForRematch: string;
+    spectatorWaitingRematch: string;
+    spectatorReady: string;
+    spectatorReadyAck: string;
+    rematchCta: string;
+    chatTitle: string;
+    chatPlaceholder: string;
+    chatEmpty: string;
+    chatOpen: string;
   };
   tierlistPage: {
     helper: string;
@@ -197,6 +216,8 @@ export const fr: Dictionary = {
     modeSoloAiDesc: "Affronte l'intelligence artificielle",
     modeMulti: "Multijoueur",
     modeMultiDesc: "2 joueurs ou plus en temps réel",
+    modeChallenge: "Challenge rejouable",
+    modeChallengeDesc: "Crée un challenge que d'autres peuvent tenter",
     settings: "Paramètres",
     assistance: "Assistance",
     login: "Connexion",
@@ -256,7 +277,7 @@ export const fr: Dictionary = {
   },
   explore: {
     title: "Explorer",
-    subtitle: "Découvre les contenus publics créés par la communauté.",
+    subtitle: "Découvre uniquement les contenus publics de la communauté.",
     searchPlaceholder: "Rechercher par titre ou thème…",
     emptyTitle: "Aucun contenu public",
     emptyFor: "pour « {term} »",
@@ -265,6 +286,7 @@ export const fr: Dictionary = {
     createBracket: "Créer un bracket",
     createTierlist: "Créer une tierlist",
     createBlindtest: "Créer un blindtest",
+    createBattleFeatChallenge: "Créer un challenge BattleFeat",
     battleFeatTitle: "BattleFeat",
     battleFeatDesc:
       "Le jeu de la chaîne de featurings ! Enchaîne les artistes qui ont collaboré ensemble.",
@@ -277,10 +299,27 @@ export const fr: Dictionary = {
     tabBattlefeat: "BattleFeat",
     sectionBrackets: "Brackets",
     sectionTierlists: "Tierlists",
-    sectionBlindtests: "Blindtests",
-    sectionBattleFeatSolo: "BattleFeat — Sessions solo",
-    sectionBattleFeatRooms: "BattleFeat — Rooms",
+    sectionBlindtests: "Blindtests publics",
+    sectionBlindtestCreations: "Blindtests — Créations publiques",
+    sectionBlindtestRooms: "Blindtests — Rooms publiques",
+    sectionBattleFeatSolo: "BattleFeat publics — Modes solo",
+    sectionBattleFeatChallenges: "BattleFeat — Challenges publics",
+    sectionBattleFeatRooms: "BattleFeat — Rooms rejoignables",
     seeAll: "Voir tout",
+  },
+  room: {
+    spectatorTitle: "Mode spectateur",
+    spectatorSubtitle:
+      "Tu observes la partie en cours. Tu pourras rejoindre lors de la prochaine revanche.",
+    spectatorWaitForRematch: "Attendre la revanche",
+    spectatorWaitingRematch: "En attente de la revanche…",
+    spectatorReady: "Prêt·e pour la prochaine manche",
+    spectatorReadyAck: "Tu rejoindras automatiquement à la fin de la partie",
+    rematchCta: "Rejouer",
+    chatTitle: "Chat de la room",
+    chatPlaceholder: "Ton message…",
+    chatEmpty: "Dis bonjour ! Les messages ne sont pas conservés en dehors de la session.",
+    chatOpen: "Chat",
   },
   tierlistPage: {
     helper: "Glisse les morceaux dans les tiers · clique sur une pochette pour écouter l'extrait",

@@ -4,16 +4,20 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { Visibility } from "@/app/my-brackets/actions";
 import {
+  deleteBattleFeatChallenge,
   deleteBattleFeatRoom,
   deleteBattleFeatSoloSession,
   deleteBlindtest,
+  deleteBlindtestRoom,
   deleteBlindtestSession,
   deleteBracket,
   deleteBracketGame,
   deleteTierlist,
   deleteTierlistSession,
+  updateBattleFeatChallengeVisibility,
   updateBattleFeatRoomVisibility,
   updateBattleFeatSoloVisibility,
+  updateBlindtestRoomVisibility,
   updateBlindtestSessionVisibility,
   updateBlindtestVisibility,
   updateBracketGameVisibility,
@@ -27,10 +31,12 @@ type Entity =
   | "tierlist"
   | "blindtest"
   | "battlefeat_solo"
+  | "battlefeat_challenge"
   | "battlefeat_room"
   | "bracket_game"
   | "tierlist_session"
-  | "blindtest_session";
+  | "blindtest_session"
+  | "blindtest_room";
 
 export default function LibraryVisibilityToggle({
   entity,
@@ -70,6 +76,9 @@ export default function LibraryVisibilityToggle({
         case "battlefeat_solo":
           res = await updateBattleFeatSoloVisibility(id, next);
           break;
+        case "battlefeat_challenge":
+          res = await updateBattleFeatChallengeVisibility(id, next);
+          break;
         case "battlefeat_room":
           res = await updateBattleFeatRoomVisibility(id, next);
           break;
@@ -81,6 +90,9 @@ export default function LibraryVisibilityToggle({
           break;
         case "blindtest_session":
           res = await updateBlindtestSessionVisibility(id, next);
+          break;
+        case "blindtest_room":
+          res = await updateBlindtestRoomVisibility(id, next);
           break;
       }
       if (res && "error" in res) {
@@ -114,6 +126,9 @@ export default function LibraryVisibilityToggle({
         case "battlefeat_solo":
           res = await deleteBattleFeatSoloSession(id);
           break;
+        case "battlefeat_challenge":
+          res = await deleteBattleFeatChallenge(id);
+          break;
         case "battlefeat_room":
           res = await deleteBattleFeatRoom(id);
           break;
@@ -125,6 +140,9 @@ export default function LibraryVisibilityToggle({
           break;
         case "blindtest_session":
           res = await deleteBlindtestSession(id);
+          break;
+        case "blindtest_room":
+          res = await deleteBlindtestRoom(id);
           break;
       }
       if (res && "error" in res) {

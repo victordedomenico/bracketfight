@@ -66,6 +66,8 @@ export default async function CreatePage() {
             modeSoloAiDesc: n.modeSoloAiDesc,
             modeMulti: n.modeMulti,
             modeMultiDesc: n.modeMultiDesc,
+            modeChallenge: n.modeChallenge,
+            modeChallengeDesc: n.modeChallengeDesc,
           }}
         />
       </div>

@@ -25,6 +25,7 @@ export async function updateBracketVisibility(id: string, visibility: Visibility
   });
   if (res.count === 0) return { error: "Bracket introuvable ou accès refusé." };
   revalidatePath("/my-brackets");
+  revalidatePath("/explore");
   return { ok: true as const };
 }
 
@@ -38,6 +39,7 @@ export async function updateTierlistVisibility(id: string, visibility: Visibilit
   });
   if (res.count === 0) return { error: "Tierlist introuvable ou accès refusé." };
   revalidatePath("/my-brackets");
+  revalidatePath("/explore");
   return { ok: true as const };
 }
 
@@ -51,6 +53,7 @@ export async function updateBlindtestVisibility(id: string, visibility: Visibili
   });
   if (res.count === 0) return { error: "Blindtest introuvable ou accès refusé." };
   revalidatePath("/my-brackets");
+  revalidatePath("/explore");
   return { ok: true as const };
 }
 
@@ -66,6 +69,7 @@ export async function updateBattleFeatSoloVisibility(id: string, visibility: Vis
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
   revalidatePath("/my-brackets");
+  revalidatePath("/explore");
   return { ok: true as const };
 }
 
@@ -175,6 +179,20 @@ export async function updateBlindtestSessionVisibility(id: string, visibility: V
   return { ok: true as const };
 }
 
+export async function updateBlindtestRoomVisibility(id: string, visibility: Visibility) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.blindtestRoom.updateMany({
+    where: { id, hostId: identity.playerId },
+    data: { visibility },
+  });
+  if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
+  revalidatePath("/my-brackets");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
 export async function deleteBracketGame(id: string) {
   const identity = await requireIdentity();
   if (!identity) return { error: "Connexion requise." };
@@ -211,6 +229,19 @@ export async function deleteBlindtestSession(id: string) {
   return { ok: true as const };
 }
 
+export async function deleteBlindtestRoom(id: string) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.blindtestRoom.deleteMany({
+    where: { id, hostId: identity.playerId },
+  });
+  if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
+  revalidatePath("/my-brackets");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
 export async function deleteBattleFeatRoom(id: string) {
   const identity = await requireIdentity();
   if (!identity) return { error: "Connexion requise." };
@@ -219,6 +250,33 @@ export async function deleteBattleFeatRoom(id: string) {
     where: { id, hostId: identity.playerId },
   });
   if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
+  revalidatePath("/my-brackets");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
+export async function updateBattleFeatChallengeVisibility(id: string, visibility: Visibility) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.battleFeatSoloChallenge.updateMany({
+    where: { id, ownerId: identity.playerId },
+    data: { visibility },
+  });
+  if (res.count === 0) return { error: "Challenge introuvable ou accès refusé." };
+  revalidatePath("/my-brackets");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
+export async function deleteBattleFeatChallenge(id: string) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.battleFeatSoloChallenge.deleteMany({
+    where: { id, ownerId: identity.playerId },
+  });
+  if (res.count === 0) return { error: "Challenge introuvable ou accès refusé." };
   revalidatePath("/my-brackets");
   revalidatePath("/explore");
   return { ok: true as const };

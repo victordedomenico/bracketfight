@@ -8,10 +8,11 @@ import BlindtestCard, { type BlindtestSummary } from "@/components/BlindtestCard
 import BlindtestRoomCard, { type BlindtestRoomSummary } from "@/components/BlindtestRoomCard";
 import {
   BattleFeatRoomCard,
-  BattleFeatSoloCard,
   type BattleFeatRoomSummary,
-  type BattleFeatSessionSummary,
 } from "@/components/BattleFeatCard";
+import BattleFeatChallengeCard, {
+  type BattleFeatChallengeSummary,
+} from "@/components/BattleFeatChallengeCard";
 import { Search } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
 
@@ -61,7 +62,7 @@ export default async function ExplorePage({
     : {};
 
   const takeGrid = tab === "all" ? 12 : 48;
-  const takeBfSolo = tab === "all" ? 8 : 36;
+  const takeBfChallenge = tab === "all" ? 8 : 36;
   const takeBfRoom = tab === "all" ? 8 : 36;
 
   const loadBrackets = tab === "all" || tab === "brackets";
@@ -69,6 +70,7 @@ export default async function ExplorePage({
   const loadBlindtests = tab === "all" || tab === "blindtests";
   const loadBattlefeat = tab === "all" || tab === "battlefeat";
   const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
+  const hasBlindtestRoomParticipants = modelHasField("BlindtestRoom", "participants");
   const hasBattleFeatRoomVisibility = modelHasField("BattleFeatRoom", "visibility");
   const hasBattleFeatRoomParticipants = modelHasField("BattleFeatRoom", "participants");
   const hasBattleFeatRoomHostScore = modelHasField("BattleFeatRoom", "hostScore");
@@ -78,7 +80,7 @@ export default async function ExplorePage({
     await ensureBattleFeatVisibilityColumns(prisma);
   }
 
-  const [brackets, tierlists, blindtests, blindtestRooms, soloSessions, battleFeatRooms] =
+  const [brackets, tierlists, blindtests, blindtestRooms, soloChallenges, battleFeatRooms] =
     await Promise.all([
     loadBrackets
       ? prisma.bracket.findMany({
@@ -109,11 +111,11 @@ export default async function ExplorePage({
           take: takeGrid,
         })
       : Promise.resolve([]),
-    loadBlindtests
+    loadBlindtests && hasBlindtestRoomVisibility
       ? prisma.blindtestRoom.findMany({
           where: {
             status: { in: ["waiting", "playing"] },
-            ...(hasBlindtestRoomVisibility ? { visibility: "public" } : {}),
+            visibility: "public",
             ...(term
               ? {
                   OR: [
@@ -126,6 +128,8 @@ export default async function ExplorePage({
           select: {
             id: true,
             status: true,
+            visibility: true,
+            ...(hasBlindtestRoomParticipants ? { participants: true } : {}),
             createdAt: true,
             host: { select: { username: true } },
             blindtest: {
@@ -140,18 +144,31 @@ export default async function ExplorePage({
         })
       : Promise.resolve([]),
     loadBattlefeat
-      ? prisma.battleFeatSoloSession.findMany({
-          where: { visibility: "public", status: "finished" },
+      ? prisma.battleFeatSoloChallenge.findMany({
+          where: {
+            visibility: "public",
+            ...(term
+              ? {
+                  OR: [
+                    { title: { contains: term, mode: "insensitive" as const } },
+                    { startingArtistName: { contains: term, mode: "insensitive" as const } },
+                  ],
+                }
+              : {}),
+          },
           select: {
             id: true,
+            title: true,
             difficulty: true,
-            score: true,
-            status: true,
             visibility: true,
+            startingArtistId: true,
+            startingArtistName: true,
+            startingArtistPic: true,
             createdAt: true,
+            owner: { select: { username: true } },
           },
           orderBy: { createdAt: "desc" },
-          take: takeBfSolo,
+          take: takeBfChallenge,
         })
       : Promise.resolve([]),
     loadBattlefeat
@@ -184,25 +201,43 @@ export default async function ExplorePage({
     trackCount: b._count.tracks,
   })) as BlindtestSummary[];
 
-  const blindtestRoomList = blindtestRooms.map((room) => ({
-    id: room.id,
-    status: room.status,
-    title: room.blindtest.title,
-    trackCount: room.blindtest._count.tracks,
-    hostName: room.host.username,
-    createdAt: room.createdAt.toISOString(),
-  })) as BlindtestRoomSummary[];
+  const blindtestRoomList = blindtestRooms
+    .filter((room) =>
+      hasBlindtestRoomParticipants
+        ? Array.isArray(room.participants) && room.participants.length > 0
+        : true,
+    )
+    .map((room) => ({
+      id: room.id,
+      status: room.status,
+      title: room.blindtest.title,
+      trackCount: room.blindtest._count.tracks,
+      hostName: room.host.username,
+      visibility: room.visibility,
+      createdAt: room.createdAt.toISOString(),
+    })) as BlindtestRoomSummary[];
 
-  const battleFeatSoloList = soloSessions.map((s) => ({
-    id: s.id,
-    difficulty: s.difficulty,
-    score: s.score,
-    status: s.status,
-    visibility: s.visibility,
-    createdAt: s.createdAt.toISOString(),
-  })) as BattleFeatSessionSummary[];
+  const battleFeatChallengeList = soloChallenges.map((c) => ({
+    id: c.id,
+    title: c.title,
+    difficulty: c.difficulty,
+    visibility: c.visibility,
+    createdAt: c.createdAt.toISOString(),
+    startingArtist: {
+      id: c.startingArtistId,
+      name: c.startingArtistName,
+      pictureUrl: c.startingArtistPic,
+    },
+    ownerUsername: c.owner?.username ?? null,
+  })) as BattleFeatChallengeSummary[];
 
-  const battleFeatRoomList = battleFeatRooms.map((room) => {
+  const battleFeatRoomList = battleFeatRooms
+    .filter((room) =>
+      hasBattleFeatRoomParticipants
+        ? Array.isArray(room.participants) && room.participants.length > 0
+        : true,
+    )
+    .map((room) => {
     const parts = "participants" in room && Array.isArray(room.participants)
       ? (room.participants as Array<{ score?: number }>)
       : [];
@@ -227,7 +262,7 @@ export default async function ExplorePage({
     };
   }) as BattleFeatRoomSummary[];
 
-  const hasAnyBattlefeat = battleFeatSoloList.length > 0 || battleFeatRoomList.length > 0;
+  const hasAnyBattlefeat = battleFeatChallengeList.length > 0 || battleFeatRoomList.length > 0;
 
   const isEmpty =
     tab === "all"
@@ -337,6 +372,9 @@ export default async function ExplorePage({
               </Link>
             ) : tab === "battlefeat" ? (
               <>
+                <Link href="/create-battlefeat" className="btn-primary inline-flex">
+                  {e.createBattleFeatChallenge}
+                </Link>
                 <Link href="/battle-feat/solo" className="btn-primary inline-flex">
                   {e.playSolo}
                 </Link>
@@ -427,12 +465,12 @@ export default async function ExplorePage({
 
           {hasAnyBattlefeat ? (
             <section className="space-y-10">
-              {battleFeatSoloList.length > 0 ? (
+              {battleFeatChallengeList.length > 0 ? (
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-bold tracking-tight">{e.sectionBattleFeatSolo}</h2>
+                  <h2 className="text-2xl font-bold tracking-tight">{e.sectionBattleFeatChallenges}</h2>
                   <div className={gridBfClass}>
-                    {battleFeatSoloList.map((s) => (
-                      <BattleFeatSoloCard key={s.id} s={s} />
+                    {battleFeatChallengeList.map((c) => (
+                      <BattleFeatChallengeCard key={c.id} c={c} />
                     ))}
                   </div>
                 </div>
@@ -495,12 +533,12 @@ export default async function ExplorePage({
         </div>
       ) : (
         <div className="mt-10 space-y-14">
-          {battleFeatSoloList.length > 0 ? (
+          {battleFeatChallengeList.length > 0 ? (
             <section className="space-y-4">
-              <h2 className="text-xl font-semibold text-[color:var(--muted)]">{e.sectionBattleFeatSolo}</h2>
+              <h2 className="text-xl font-semibold text-[color:var(--muted)]">{e.sectionBattleFeatChallenges}</h2>
               <div className={gridClass}>
-                {battleFeatSoloList.map((s) => (
-                  <BattleFeatSoloCard key={s.id} s={s} />
+                {battleFeatChallengeList.map((c) => (
+                  <BattleFeatChallengeCard key={c.id} c={c} />
                 ))}
               </div>
             </section>

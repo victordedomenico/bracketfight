@@ -40,6 +40,18 @@ export default async function RoomPage({
   const roomData = await getBattleFeatRoomSnapshot(roomId);
   if (!roomData) notFound();
 
+  const participantUsername = roomData.participants.find(
+    (p) => p.playerId === playerId,
+  )?.username;
+  let username = participantUsername ?? null;
+  if (!username) {
+    const profile = await prisma.profile.findUnique({
+      where: { id: playerId },
+      select: { username: true },
+    });
+    username = profile?.username ?? "Anonyme";
+  }
+
   return (
     <div className="mx-auto w-full max-w-[1040px] py-6">
       <div className="mb-6 rounded-[28px] border px-6 py-5" style={{ borderColor: "#2a3242", background: "#10141d" }}>
@@ -48,7 +60,7 @@ export default async function RoomPage({
           Defi en temps reel · Room {roomData.id.slice(0, 8)}
         </p>
       </div>
-      <BattleFeatRoom initialRoom={roomData} userId={playerId} />
+      <BattleFeatRoom initialRoom={roomData} userId={playerId} username={username} />
     </div>
   );
 }

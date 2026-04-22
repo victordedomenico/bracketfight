@@ -6,6 +6,19 @@ import { User, Users, ArrowRight, Music } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+function modelHasField(modelName: string, fieldName: string): boolean {
+  const runtime = (
+    prisma as unknown as {
+      _runtimeDataModel?: {
+        models?: Record<string, { fields?: Array<{ name: string }> }>;
+      };
+    }
+  )._runtimeDataModel;
+  const model = runtime?.models?.[modelName];
+  if (!model?.fields) return false;
+  return model.fields.some((f) => f.name === fieldName);
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const bt = await prisma.blindtest.findUnique({ where: { id }, select: { title: true } });
@@ -14,10 +27,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function BlindtestPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ multi?: string }>;
 }) {
   const { id } = await params;
+  const { multi } = await searchParams;
 
   const blindtest = await prisma.blindtest.findUnique({
     where: { id },
@@ -32,6 +48,9 @@ export default async function BlindtestPage({
   if (!blindtest) notFound();
 
   const trackCount = blindtest._count.tracks;
+  const hasBlindtestRoomParticipants = modelHasField("BlindtestRoom", "participants");
+  const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
+  const multiplayerEnabled = hasBlindtestRoomParticipants;
 
   const createPrivateRoom = createBlindtestRoom.bind(null, id, "private");
   const createPublicRoom = createBlindtestRoom.bind(null, id, "public");
@@ -50,6 +69,11 @@ export default async function BlindtestPage({
         <p className="mt-2 text-[color:var(--muted)]">
           {trackCount} morceau{trackCount > 1 ? "x" : ""} · 30 secondes par morceau
         </p>
+        {multi === "unavailable" ? (
+          <p className="mt-3 text-sm text-amber-300">
+            Le mode multijoueur est indisponible avec le schéma de base de données actuel.
+          </p>
+        ) : null}
       </div>
 
       {/* Mode cards */}
@@ -97,20 +121,32 @@ export default async function BlindtestPage({
             </div>
           </div>
           <p className="flex-1 text-sm text-[color:var(--muted)]">
-            Crée une room privée (lien uniquement) ou publique (visible dans Explorer).
+            {multiplayerEnabled
+              ? hasBlindtestRoomVisibility
+                ? "Crée une room privée (lien uniquement) ou publique (visible dans Explorer)."
+                : "Crée une room multijoueur privée (lien uniquement)."
+              : "Le mode multijoueur est temporairement indisponible sur ce schéma."}
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <form action={createPrivateRoom}>
-              <button type="submit" className="btn-ghost text-sm">
-                Room privée
-              </button>
-            </form>
-            <form action={createPublicRoom}>
-              <button type="submit" className="btn-primary text-sm">
-                Room publique <ArrowRight size={14} />
-              </button>
-            </form>
-          </div>
+          {multiplayerEnabled ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <form action={createPrivateRoom}>
+                <button type="submit" className="btn-ghost text-sm">
+                  Room privée
+                </button>
+              </form>
+              {hasBlindtestRoomVisibility ? (
+                <form action={createPublicRoom}>
+                  <button type="submit" className="btn-primary text-sm">
+                    Room publique <ArrowRight size={14} />
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-4 text-xs text-[color:var(--muted)]">
+              Mets à jour tes migrations Prisma pour réactiver le multi.
+            </p>
+          )}
         </div>
       </div>
     </div>

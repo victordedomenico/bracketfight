@@ -98,11 +98,38 @@ function ArtistChip({
   );
 }
 
-export default function BattleFeatSolo() {
+export type BattleFeatSoloChallengePreset = {
+  id: string;
+  title: string;
+  difficulty: number;
+  startingArtist: {
+    id: string;
+    name: string;
+    pictureUrl: string | null;
+  };
+};
+
+export default function BattleFeatSolo({
+  challenge,
+}: {
+  challenge?: BattleFeatSoloChallengePreset;
+}) {
   const router = useRouter();
 
-  const [difficulty, setDifficulty] = useState(2);
-  const [startingArtist, setStartingArtist] = useState<ArtistResult | null>(null);
+  const challengeLocked = !!challenge;
+  const initialArtist: ArtistResult | null = challenge
+    ? {
+        id: challenge.startingArtist.id,
+        name: challenge.startingArtist.name,
+        nameSlug: "",
+        fanCount: 0,
+        popularityTier: 3,
+        pictureUrl: challenge.startingArtist.pictureUrl,
+      }
+    : null;
+
+  const [difficulty, setDifficulty] = useState(challenge?.difficulty ?? 2);
+  const [startingArtist, setStartingArtist] = useState<ArtistResult | null>(initialArtist);
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [moves, setMoves] = useState<FeatMove[]>([]);
@@ -234,6 +261,7 @@ export default function BattleFeatSolo() {
           finalPlayerScore,
           finalJokersUsed,
           publishMode,
+          challenge?.id ?? null,
         );
         if (result.id) setSessionId(result.id);
       } catch {
@@ -241,7 +269,7 @@ export default function BattleFeatSolo() {
       }
       setSaving(false);
     },
-    [difficulty, startingArtist, jokersUsed, publishMode],
+    [difficulty, startingArtist, jokersUsed, publishMode, challenge],
   );
 
   const handleDownload = async () => {
@@ -291,6 +319,7 @@ export default function BattleFeatSolo() {
         playerScore,
         jokersUsed,
         "private",
+        challenge?.id ?? null,
       );
       if (result.id) {
         if (publishMode === "none") setPromoted(true);
@@ -523,6 +552,17 @@ export default function BattleFeatSolo() {
   if (phase === "setup") {
     return (
       <div className="space-y-8">
+        {challenge && (
+          <div className="card border-[color:var(--accent)]/40 bg-[color:var(--accent)]/5 p-4">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[color:var(--accent)]">
+              Challenge
+            </p>
+            <p className="mt-1 text-lg font-bold">{challenge.title}</p>
+            <p className="mt-1 text-xs text-[color:var(--muted)]">
+              Artiste de départ et difficulté imposés par la création.
+            </p>
+          </div>
+        )}
         <div className="card p-6 md:p-8">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Swords size={20} className="text-[color:var(--accent)]" />
@@ -532,12 +572,14 @@ export default function BattleFeatSolo() {
             {difficultyConfig.map((d) => (
               <button
                 key={d.value}
-                onClick={() => setDifficulty(d.value)}
+                type="button"
+                onClick={() => !challengeLocked && setDifficulty(d.value)}
+                disabled={challengeLocked && difficulty !== d.value}
                 className={`rounded-xl border p-4 text-left transition ${
                   difficulty === d.value
                     ? `${d.border} ${d.bg} ring-1 ring-current ${d.color}`
                     : "border-[color:var(--border)] hover:border-[color:var(--muted)]"
-                }`}
+                } ${challengeLocked && difficulty !== d.value ? "opacity-40 cursor-not-allowed" : ""}`}
               >
                 <p className={`font-bold ${d.color}`}>{d.label}</p>
                 <p className="text-xs text-[color:var(--muted)] mt-1">{d.desc}</p>
@@ -574,9 +616,15 @@ export default function BattleFeatSolo() {
           {startingArtist ? (
             <div className="flex items-center gap-3">
               <ArtistChip name={startingArtist.name} pictureUrl={startingArtist.pictureUrl} />
-              <button onClick={() => setStartingArtist(null)} className="btn-ghost !px-3 !py-1.5 text-sm">
-                Changer
-              </button>
+              {!challengeLocked && (
+                <button
+                  type="button"
+                  onClick={() => setStartingArtist(null)}
+                  className="btn-ghost !px-3 !py-1.5 text-sm"
+                >
+                  Changer
+                </button>
+              )}
             </div>
           ) : (
             <ArtistSearchInput

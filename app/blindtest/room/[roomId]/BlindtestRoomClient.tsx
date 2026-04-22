@@ -29,6 +29,7 @@ import type {
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import { POINTS_TITLE, POINTS_ARTIST } from "@/components/BlindtestGame";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
+import RoomChat from "@/components/RoomChat";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import {
   joinRoom,
@@ -139,15 +140,18 @@ function ParticipantStatus({
 export default function BlindtestRoomClient({
   initialRoom,
   userId,
+  username,
 }: {
   initialRoom: BlindtestRoomSnapshot;
   userId: string;
+  username: string;
 }) {
   const [room, setRoom] = useState(initialRoom);
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [waitingRematch, setWaitingRematch] = useState(false);
 
   // Per-track local state
   type Phase = "loading" | "playing" | "revealed";
@@ -443,6 +447,27 @@ export default function BlindtestRoomClient({
     setSubmitting(false);
   };
 
+  // Auto-join when spectator has asked to wait for rematch and the room returns to waiting.
+  useEffect(() => {
+    if (!waitingRematch) return;
+    if (room.status !== "waiting") return;
+    if (isParticipant) return;
+    let cancelled = false;
+    (async () => {
+      const result = await joinRoom(room.id);
+      if (cancelled) return;
+      if (result.ok) {
+        setRoom(result.room);
+        setNow(Date.now());
+        await broadcastSync({ room: result.room, event: result.event });
+        setWaitingRematch(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [waitingRematch, room.status, room.id, isParticipant, broadcastSync]);
+
   const handleStart = async () => {
     if (!isHost || submitting) return;
     setSubmitting(true);
@@ -687,6 +712,13 @@ export default function BlindtestRoomClient({
         </div>
 
         {error && <p className="text-center text-sm text-red-400">{error}</p>}
+
+        <RoomChat
+          channelKey="blindtest"
+          roomId={room.id}
+          userId={userId}
+          username={username}
+        />
       </div>
     );
   }
@@ -836,6 +868,25 @@ export default function BlindtestRoomClient({
               Rejouer
             </button>
           )}
+          {isSpectator && (
+            <button
+              type="button"
+              onClick={() => setWaitingRematch((v) => !v)}
+              className={waitingRematch ? "btn-primary flex-1 justify-center" : "btn-ghost flex-1 justify-center"}
+            >
+              {waitingRematch ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  En attente de la revanche…
+                </>
+              ) : (
+                <>
+                  <Swords size={16} />
+                  Attendre la revanche
+                </>
+              )}
+            </button>
+          )}
           <Link
             href={`/blindtest/${room.blindtestId}`}
             className="btn-ghost flex-1 justify-center"
@@ -845,6 +896,13 @@ export default function BlindtestRoomClient({
         </div>
 
         {error && <p className="text-center text-sm text-red-400">{error}</p>}
+
+        <RoomChat
+          channelKey="blindtest"
+          roomId={room.id}
+          userId={userId}
+          username={username}
+        />
       </div>
     );
   }
@@ -1074,12 +1132,80 @@ export default function BlindtestRoomClient({
           </div>
         )}
 
-        {/* Spectator / waiting state */}
+        {/* Spectator view while the round is in progress */}
         {phase === "playing" && isSpectator && (
-          <div className="flex flex-col items-center gap-4 py-10">
-            <Music size={40} className="text-[color:var(--accent)]" />
-            <p className="text-sm text-[color:var(--muted)]">Mode spectateur</p>
-            <span className="text-2xl font-black tabular-nums">{timeLeft}s</span>
+          <div className="flex flex-col md:flex-row gap-8 items-center">
+            <div className="relative h-44 w-44 shrink-0 rounded-xl overflow-hidden bg-[color:var(--surface-2)]">
+              {track.coverUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={track.coverUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  style={{ filter: "blur(28px) brightness(0.3)", transform: "scale(1.15)" }}
+                />
+              )}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                <Music size={32} className="text-white/60" />
+                <span
+                  className={`text-2xl font-black tabular-nums ${
+                    timeLeft <= 7 ? "text-red-400 animate-pulse" : "text-white"
+                  }`}
+                >
+                  {timeLeft}s
+                </span>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--accent)]">
+                Mode spectateur
+              </p>
+              <p className="text-sm text-[color:var(--muted)]">
+                Tu observes la partie en cours. Tu pourras rejoindre lors de la prochaine
+                revanche.
+              </p>
+              <p className="text-xs text-[color:var(--muted)]">
+                Morceau {room.currentTrack + 1}/{trackCount}
+              </p>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setWaitingRematch((v) => !v)}
+                  className={waitingRematch ? "btn-primary" : "btn-ghost"}
+                >
+                  {waitingRematch ? (
+                    <>
+                      <Check size={14} className="text-green-400" />
+                      Prêt·e pour la prochaine manche
+                    </>
+                  ) : (
+                    <>
+                      <Swords size={14} />
+                      Prêt·e pour la prochaine manche ?
+                    </>
+                  )}
+                </button>
+                {waitingRematch ? (
+                  <p className="mt-2 text-[11px] text-[color:var(--muted)]">
+                    Tu rejoindras automatiquement à la fin de la partie.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Spectator view after they submitted (shouldn't happen since spectators cannot play),
+            but show a calm "waiting" state if the round is in revealed phase for a spectator. */}
+        {phase === "revealed" && isSpectator && (
+          <div className="flex flex-col items-center gap-3 py-10">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--accent)]">
+              Mode spectateur
+            </p>
+            <p className="text-sm text-[color:var(--muted)]">
+              En attente du prochain morceau…
+            </p>
           </div>
         )}
       </div>
@@ -1116,6 +1242,13 @@ export default function BlindtestRoomClient({
       )}
 
       {error && <p className="text-center text-sm text-red-400">{error}</p>}
+
+      <RoomChat
+        channelKey="blindtest"
+        roomId={room.id}
+        userId={userId}
+        username={username}
+      />
     </div>
   );
 }

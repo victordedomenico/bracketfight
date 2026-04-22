@@ -9,12 +9,16 @@ import { getGuestIdentityFromCookies } from "@/lib/guest";
 import BracketCard, { type BracketSummary } from "@/components/BracketCard";
 import TierlistCard, { type TierlistSummary } from "@/components/TierlistCard";
 import BlindtestCard, { type BlindtestSummary } from "@/components/BlindtestCard";
+import BlindtestRoomCard, { type BlindtestRoomSummary } from "@/components/BlindtestRoomCard";
 import {
   BattleFeatRoomCard,
   BattleFeatSoloCard,
   type BattleFeatRoomSummary,
   type BattleFeatSessionSummary,
 } from "@/components/BattleFeatCard";
+import BattleFeatChallengeCard, {
+  type BattleFeatChallengeSummary,
+} from "@/components/BattleFeatChallengeCard";
 import SessionCard, { type SessionSummary } from "@/components/SessionCard";
 import { Plus, Play } from "lucide-react";
 
@@ -51,6 +55,7 @@ export default async function MyBracketsPage({
   const hasBracketGameVisibility = modelHasField("BracketGame", "visibility");
   const hasTierlistSessionVisibility = modelHasField("TierlistSession", "visibility");
   const hasBlindtestSessionVisibility = modelHasField("BlindtestSession", "visibility");
+  const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
   const hasBattleFeatRoomVisibility = modelHasField("BattleFeatRoom", "visibility");
   const hasBattleFeatRoomParticipants = modelHasField("BattleFeatRoom", "participants");
   const hasBattleFeatRoomHostScore = modelHasField("BattleFeatRoom", "hostScore");
@@ -60,7 +65,9 @@ export default async function MyBracketsPage({
     brackets,
     tierlists,
     blindtests,
+    blindtestRoomsRaw,
     soloSessions,
+    soloChallenges,
     battleFeatRooms,
     bracketGamesRaw,
     tierlistSessionsRaw,
@@ -89,6 +96,26 @@ export default async function MyBracketsPage({
           },
           orderBy: { createdAt: "desc" },
         }),
+        prisma.blindtestRoom.findMany({
+          where: {
+            hostId: activePlayerId,
+            ...(hasBlindtestRoomVisibility ? visFilter : {}),
+          },
+          select: {
+            id: true,
+            status: true,
+            ...(hasBlindtestRoomVisibility ? { visibility: true } : {}),
+            createdAt: true,
+            host: { select: { username: true } },
+            blindtest: {
+              select: {
+                title: true,
+                _count: { select: { tracks: true } },
+              },
+            },
+          },
+          orderBy: { updatedAt: "desc" },
+        }),
         prisma.battleFeatSoloSession.findMany({
           where: { playerId: activePlayerId, ...visFilter },
           select: {
@@ -97,6 +124,20 @@ export default async function MyBracketsPage({
             score: true,
             status: true,
             visibility: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.battleFeatSoloChallenge.findMany({
+          where: { ownerId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            title: true,
+            difficulty: true,
+            visibility: true,
+            startingArtistId: true,
+            startingArtistName: true,
+            startingArtistPic: true,
             createdAt: true,
           },
           orderBy: { createdAt: "desc" },
@@ -176,7 +217,7 @@ export default async function MyBracketsPage({
         }),
       ]);
       })()
-    : [[], [], [], [], [], [], [], []];
+    : [[], [], [], [], [], [], [], [], [], []];
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
   const tierlistList = tierlists.map((t) => ({ ...t, coverUrl: t.coverUrl })) as TierlistSummary[];
@@ -186,6 +227,19 @@ export default async function MyBracketsPage({
     visibility: b.visibility,
     trackCount: b._count.tracks,
   })) as BlindtestSummary[];
+  const blindtestRoomList = blindtestRoomsRaw.map((room) => ({
+    id: room.id,
+    status: room.status,
+    title: room.blindtest.title,
+    trackCount: room.blindtest._count.tracks,
+    hostName: room.host.username,
+    visibility:
+      "visibility" in room && typeof room.visibility === "string"
+        ? room.visibility
+        : "public",
+    createdAt: room.createdAt.toISOString(),
+    canEditVisibility: true,
+  })) as BlindtestRoomSummary[];
   const battleFeatList = soloSessions.map((s) => ({
     id: s.id,
     difficulty: s.difficulty,
@@ -194,6 +248,18 @@ export default async function MyBracketsPage({
     visibility: s.visibility,
     createdAt: s.createdAt.toISOString(),
   })) as BattleFeatSessionSummary[];
+  const battleFeatChallengeList = soloChallenges.map((c) => ({
+    id: c.id,
+    title: c.title,
+    difficulty: c.difficulty,
+    visibility: c.visibility,
+    createdAt: c.createdAt.toISOString(),
+    startingArtist: {
+      id: c.startingArtistId,
+      name: c.startingArtistName,
+      pictureUrl: c.startingArtistPic,
+    },
+  })) as BattleFeatChallengeSummary[];
   const battleFeatRoomList = battleFeatRooms.map((room) => {
     const parts = "participants" in room && Array.isArray(room.participants)
       ? (room.participants as Array<{ score?: number }>)
@@ -287,7 +353,9 @@ export default async function MyBracketsPage({
     bracketList.length +
     tierlistList.length +
     blindtestList.length +
+    blindtestRoomList.length +
     battleFeatList.length +
+    battleFeatChallengeList.length +
     battleFeatRoomList.length +
     bracketSessions.length +
     tierlistSessions.length +
@@ -299,7 +367,7 @@ export default async function MyBracketsPage({
       : tab === "blindtests"
       ? "/create-blindtest"
       : tab === "battlefeat"
-      ? "/battle-feat/solo"
+      ? "/create-battlefeat"
       : "/create-bracket";
   const createLabel =
     tab === "tierlists"
@@ -307,7 +375,7 @@ export default async function MyBracketsPage({
       : tab === "blindtests"
       ? "Nouveau blindtest"
       : tab === "battlefeat"
-      ? "Nouvelle partie"
+      ? "Nouveau challenge"
       : "Nouveau bracket";
 
   return (
@@ -318,7 +386,7 @@ export default async function MyBracketsPage({
             Ma Bibliothèque
           </h1>
           <p className="mt-2 text-base sm:text-xl lg:text-3xl" style={{ color: "#8f93a0" }}>
-            Gérez vos créations et l&apos;historique de vos défis.
+            Retrouve toutes tes créations et tes résultats, en public ou en privé.
           </p>
         </div>
         <Link
@@ -349,8 +417,8 @@ export default async function MyBracketsPage({
         <TabItem current={tab} value="all" label={`Tous (${totalCount})`} />
         <TabItem current={tab} value="brackets" label={`Brackets (${brackets.length})`} />
         <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
-        <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length})`} />
-        <TabItem current={tab} value="battlefeat" label={`BattleFeat (${battleFeatList.length + battleFeatRoomList.length})`} />
+        <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length + blindtestRoomList.length})`} />
+        <TabItem current={tab} value="battlefeat" label={`BattleFeat (${battleFeatList.length + battleFeatChallengeList.length + battleFeatRoomList.length})`} />
         </div>
 
       {/* Visibility filter */}
@@ -432,7 +500,7 @@ export default async function MyBracketsPage({
               </section>
             ) : null}
 
-            {blindtestList.length > 0 || blindtestSessions.length > 0 ? (
+            {blindtestList.length > 0 || blindtestRoomList.length > 0 || blindtestSessions.length > 0 ? (
               <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Blindtests</h2>
                 <SubSection label="Mes créations">
@@ -446,9 +514,20 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes résultats">
+                <SubSection label="Mes résultats multijoueur">
+                  {blindtestRoomList.length === 0 ? (
+                    <EmptySub label="Aucun résultat multijoueur." />
+                  ) : (
+                    <CardsGrid>
+                      {blindtestRoomList.map((room) => (
+                        <BlindtestRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+                <SubSection label="Mes résultats solo">
                   {blindtestSessions.length === 0 ? (
-                    <EmptySub label="Aucune partie terminée." />
+                    <EmptySub label="Aucun résultat solo." />
                   ) : (
                     <CardsGrid>
                       {blindtestSessions.map((s) => (
@@ -460,12 +539,22 @@ export default async function MyBracketsPage({
               </section>
             ) : null}
 
-            {battleFeatList.length > 0 || battleFeatRoomList.length > 0 ? (
+            {battleFeatList.length > 0 || battleFeatChallengeList.length > 0 || battleFeatRoomList.length > 0 ? (
               <section className="space-y-4">
                 <h2 className="text-2xl font-bold">BattleFeat</h2>
+                {battleFeatChallengeList.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-[color:var(--muted)]">Mes créations</p>
+                    <CardsGrid>
+                      {battleFeatChallengeList.map((c) => (
+                        <BattleFeatChallengeCard key={c.id} c={c} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  </div>
+                ) : null}
                 {battleFeatList.length > 0 ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-[color:var(--muted)]">Sessions solo</p>
+                    <p className="text-sm text-[color:var(--muted)]">Mes résultats solo / solo vs IA</p>
                     <CardsGrid>
                       {battleFeatList.map((s) => (
                         <BattleFeatSoloCard key={s.id} s={s} libraryEditor={libraryEditor} />
@@ -475,7 +564,7 @@ export default async function MyBracketsPage({
                 ) : null}
                 {battleFeatRoomList.length > 0 ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-[color:var(--muted)]">Rooms</p>
+                    <p className="text-sm text-[color:var(--muted)]">Mes résultats multijoueur</p>
                     <CardsGrid>
                       {battleFeatRoomList.map((room) => (
                         <BattleFeatRoomCard key={room.id} r={room} libraryEditor={libraryEditor} />
@@ -554,7 +643,7 @@ export default async function MyBracketsPage({
           </div>
         )
       ) : tab === "blindtests" ? (
-        blindtestList.length === 0 && blindtestSessions.length === 0 ? (
+        blindtestList.length === 0 && blindtestRoomList.length === 0 && blindtestSessions.length === 0 ? (
           <EmptyState
             label="Aucun blindtest pour le moment"
             cta="Créer un blindtest"
@@ -573,9 +662,20 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes résultats">
+            <SubSection label="Mes résultats multijoueur">
+              {blindtestRoomList.length === 0 ? (
+                <EmptySub label="Aucun résultat multijoueur." />
+              ) : (
+                <CardsGrid>
+                  {blindtestRoomList.map((room) => (
+                    <BlindtestRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+            <SubSection label="Mes résultats solo">
               {blindtestSessions.length === 0 ? (
-                <EmptySub label="Aucune partie terminée." />
+                <EmptySub label="Aucun résultat solo." />
               ) : (
                 <CardsGrid>
                   {blindtestSessions.map((s) => (
@@ -587,20 +687,36 @@ export default async function MyBracketsPage({
           </div>
         )
       ) : tab === "battlefeat" ? (
-        battleFeatList.length === 0 && battleFeatRoomList.length === 0 ? (
+        battleFeatList.length === 0 && battleFeatChallengeList.length === 0 && battleFeatRoomList.length === 0 ? (
           <EmptyState
             label="Aucune partie BattleFeat pour le moment"
-            cta="Jouer"
-            href="/battle-feat/solo"
+            cta="Créer un challenge"
+            href="/create-battlefeat"
           />
         ) : (
           <div className="mt-8 space-y-9">
+            {battleFeatChallengeList.length > 0 ? (
+              <section className="space-y-4">
+                <div>
+                  <h2 className="text-2xl font-bold">Mes créations</h2>
+                  <p className="text-sm text-[color:var(--muted)]">
+                    Tes challenges BattleFeat rejouables.
+                  </p>
+                </div>
+                <CardsGrid>
+                  {battleFeatChallengeList.map((c) => (
+                    <BattleFeatChallengeCard key={c.id} c={c} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              </section>
+            ) : null}
+
             {battleFeatList.length > 0 ? (
               <section className="space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Sessions solo</h2>
+                  <h2 className="text-2xl font-bold">Mes résultats solo / solo vs IA</h2>
                   <p className="text-sm text-[color:var(--muted)]">
-                    Tes dernières parties contre l&apos;IA.
+                    Tes dernières parties BattleFeat solo.
                   </p>
                 </div>
                 <CardsGrid>
@@ -614,9 +730,9 @@ export default async function MyBracketsPage({
             {battleFeatRoomList.length > 0 ? (
               <section className="space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Rooms</h2>
+                  <h2 className="text-2xl font-bold">Mes résultats multijoueur</h2>
                   <p className="text-sm text-[color:var(--muted)]">
-                    Tes rooms BattleFeat partagées par lien.
+                    Tes rooms BattleFeat en mode multijoueur.
                   </p>
                 </div>
                 <CardsGrid>

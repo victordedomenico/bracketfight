@@ -11,6 +11,7 @@ export async function saveSoloSession(
   score: number,
   jokersUsed: number,
   visibility: "private" | "public" = "private",
+  challengeId: string | null = null,
 ) {
   let identity: { playerId: string };
   try {
@@ -27,6 +28,7 @@ export async function saveSoloSession(
     const session = await prisma.battleFeatSoloSession.create({
       data: {
         playerId: identity.playerId,
+        challengeId: challengeId ?? null,
         difficulty,
         startingArtistId: String(startingArtistId),
         moves: moves as unknown as import("@prisma/client").Prisma.JsonArray,

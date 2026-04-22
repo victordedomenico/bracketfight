@@ -21,6 +21,23 @@ import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import type { Prisma } from "@prisma/client";
 
 const PRESENCE_HEARTBEAT_MIN_SECONDS = 10;
+const BLINDTEST_ROOM_PARTICIPANTS_UNAVAILABLE =
+  "Room multijoueur indisponible sur ce schéma de base de données (champ participants manquant).";
+
+function modelHasField(modelName: string, fieldName: string): boolean {
+  const runtime = (
+    prisma as unknown as {
+      _runtimeDataModel?: {
+        models?: Record<string, { fields?: Array<{ name: string }> }>;
+      };
+    }
+  )._runtimeDataModel;
+  const model = runtime?.models?.[modelName];
+  if (!model?.fields) return false;
+  return model.fields.some((f) => f.name === fieldName);
+}
+
+const hasBlindtestRoomParticipants = modelHasField("BlindtestRoom", "participants");
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 
@@ -43,6 +60,8 @@ function shouldHeartbeat(lastSeenAt: string | null, nowMs: number) {
 }
 
 async function touchPresence(roomId: string, playerId: string) {
+  if (!hasBlindtestRoomParticipants) return;
+
   const room = await prisma.blindtestRoom.findUnique({
     where: { id: roomId },
     select: { id: true, participants: true, status: true },
@@ -98,6 +117,10 @@ export async function refreshRoomState(roomId: string) {
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 export async function joinRoom(roomId: string) {
+  if (!hasBlindtestRoomParticipants) {
+    return { ok: false as const, error: BLINDTEST_ROOM_PARTICIPANTS_UNAVAILABLE };
+  }
+
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
@@ -151,6 +174,10 @@ export async function joinRoom(roomId: string) {
 }
 
 export async function leaveRoom(roomId: string) {
+  if (!hasBlindtestRoomParticipants) {
+    return { ok: false as const, error: BLINDTEST_ROOM_PARTICIPANTS_UNAVAILABLE };
+  }
+
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
@@ -172,6 +199,10 @@ export async function leaveRoom(roomId: string) {
 }
 
 export async function startGame(roomId: string) {
+  if (!hasBlindtestRoomParticipants) {
+    return { ok: false as const, error: BLINDTEST_ROOM_PARTICIPANTS_UNAVAILABLE };
+  }
+
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
@@ -213,6 +244,10 @@ export async function submitAnswer(
   guessTitle: string,
   guessArtist: string,
 ) {
+  if (!hasBlindtestRoomParticipants) {
+    return { ok: false as const, error: BLINDTEST_ROOM_PARTICIPANTS_UNAVAILABLE };
+  }
+
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
@@ -274,6 +309,10 @@ export async function submitAnswer(
 }
 
 export async function nextTrack(roomId: string) {
+  if (!hasBlindtestRoomParticipants) {
+    return { ok: false as const, error: BLINDTEST_ROOM_PARTICIPANTS_UNAVAILABLE };
+  }
+
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
@@ -320,6 +359,10 @@ export async function nextTrack(roomId: string) {
 }
 
 export async function rematch(roomId: string) {
+  if (!hasBlindtestRoomParticipants) {
+    return { ok: false as const, error: BLINDTEST_ROOM_PARTICIPANTS_UNAVAILABLE };
+  }
+
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 

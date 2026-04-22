@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getGuestIdentityFromCookies } from "@/lib/guest";
 import { getBlindtestRoomSnapshot } from "@/lib/blindtest-room";
+import prisma from "@/lib/prisma";
 import BlindtestRoomClient from "./BlindtestRoomClient";
 import SectionHeader from "@/components/ui/SectionHeader";
 
@@ -47,6 +48,18 @@ export default async function BlindtestRoomPage({
   const room = await getBlindtestRoomSnapshot(roomId);
   if (!room) notFound();
 
+  const participantUsername = room.participants.find(
+    (p) => p.playerId === playerId,
+  )?.username;
+  let username = participantUsername ?? null;
+  if (!username) {
+    const profile = await prisma.profile.findUnique({
+      where: { id: playerId },
+      select: { username: true },
+    });
+    username = profile?.username ?? "Anonyme";
+  }
+
   return (
     <div className="page-shell max-w-3xl py-10">
       <div className="mb-6">
@@ -59,6 +72,7 @@ export default async function BlindtestRoomPage({
       <BlindtestRoomClient
         initialRoom={room}
         userId={playerId}
+        username={username}
       />
     </div>
   );

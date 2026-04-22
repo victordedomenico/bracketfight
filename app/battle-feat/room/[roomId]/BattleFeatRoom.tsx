@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
+import RoomChat from "@/components/RoomChat";
 import type {
   ArtistResult,
   BattleFeatParticipant,
@@ -140,9 +141,11 @@ function PlayerChip({
 export default function BattleFeatRoom({
   initialRoom,
   userId,
+  username,
 }: {
   initialRoom: BattleFeatRoomSnapshot;
   userId: string;
+  username: string;
 }) {
   const [room, setRoom] = useState(initialRoom);
   const roomRef = useRef(room);
@@ -154,6 +157,7 @@ export default function BattleFeatRoom({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [waitingRematch, setWaitingRematch] = useState(false);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const timeoutClaimRef = useRef<string | null>(null);
@@ -405,6 +409,27 @@ export default function BattleFeatRoom({
     setSubmitting(false);
   };
 
+  // Auto-join when spectator waits for rematch and room returns to waiting.
+  useEffect(() => {
+    if (!waitingRematch) return;
+    if (room.status !== "waiting") return;
+    if (isParticipant) return;
+    let cancelled = false;
+    (async () => {
+      const result = await joinRoom(room.id);
+      if (cancelled) return;
+      if (result.ok) {
+        setRoom(result.room);
+        setNow(Date.now());
+        await broadcastSync({ room: result.room, event: result.event });
+        setWaitingRematch(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [waitingRematch, room.status, room.id, isParticipant, broadcastSync]);
+
   const handleStartGame = async (artist: ArtistResult) => {
     setSubmitting(true);
     setError("");
@@ -586,6 +611,13 @@ export default function BattleFeatRoom({
         </div>
 
         {error ? <p className="text-center text-sm text-red-400">{error}</p> : null}
+
+        <RoomChat
+          channelKey="battlefeat"
+          roomId={room.id}
+          userId={userId}
+          username={username}
+        />
       </div>
     );
   }
@@ -718,10 +750,38 @@ export default function BattleFeatRoom({
               Rejouer
             </button>
           ) : null}
+          {isSpectator ? (
+            <button
+              type="button"
+              onClick={() => setWaitingRematch((v) => !v)}
+              className={
+                waitingRematch ? "btn-primary flex-1 justify-center" : "btn-ghost flex-1 justify-center"
+              }
+            >
+              {waitingRematch ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  En attente de la revanche…
+                </>
+              ) : (
+                <>
+                  <Swords size={16} />
+                  Attendre la revanche
+                </>
+              )}
+            </button>
+          ) : null}
           <Link href="/battle-feat" className="btn-ghost flex-1 justify-center">
             <ArrowRight size={16} /> Accueil
           </Link>
         </div>
+
+        <RoomChat
+          channelKey="battlefeat"
+          roomId={room.id}
+          userId={userId}
+          username={username}
+        />
       </div>
     );
   }
@@ -729,6 +789,41 @@ export default function BattleFeatRoom({
   // ── PLAYING ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
+      {isSpectator ? (
+        <div className="flex flex-col gap-2 rounded-xl border border-[color:var(--accent)] bg-[color:var(--accent-dim)] px-4 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold text-[color:var(--accent)]">Mode spectateur</p>
+            <p className="text-xs text-[color:var(--muted)]">
+              Tu observes la partie en cours. Tu pourras rejoindre lors de la prochaine revanche.
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={() => setWaitingRematch((v) => !v)}
+              className={waitingRematch ? "btn-primary !py-1.5" : "btn-ghost !py-1.5"}
+            >
+              {waitingRematch ? (
+                <>
+                  <Check size={14} className="text-green-400" />
+                  Prêt·e pour la prochaine manche
+                </>
+              ) : (
+                <>
+                  <Swords size={14} />
+                  Prêt·e pour la prochaine manche ?
+                </>
+              )}
+            </button>
+            {waitingRematch ? (
+              <p className="text-[11px] text-[color:var(--muted)]">
+                Tu rejoindras automatiquement à la fin de la partie.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {/* Scoreboard */}
       <div className="card px-4 py-2 text-sm">
         <div className="mb-1 flex items-center justify-between">
@@ -887,6 +982,13 @@ export default function BattleFeatRoom({
           </div>
         )}
       </div>
+
+      <RoomChat
+        channelKey="battlefeat"
+        roomId={room.id}
+        userId={userId}
+        username={username}
+      />
     </div>
   );
 }

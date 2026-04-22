@@ -1,10 +1,48 @@
 import type { Metadata } from "next";
 import { Bot, ShieldCheck, UserRound } from "lucide-react";
-import BattleFeatSolo from "./BattleFeatSolo";
+import prisma from "@/lib/prisma";
+import BattleFeatSolo, { type BattleFeatSoloChallengePreset } from "./BattleFeatSolo";
 
 export const metadata: Metadata = { title: "BattleFeat Solo — MusiKlash" };
 
-export default function BattleFeatSoloPage() {
+export default async function BattleFeatSoloPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ challengeId?: string }>;
+}) {
+  const { challengeId } = await searchParams;
+
+  let challengePreset: BattleFeatSoloChallengePreset | undefined;
+  if (challengeId) {
+    const challenge = await prisma.battleFeatSoloChallenge.findUnique({
+      where: { id: challengeId },
+      select: {
+        id: true,
+        title: true,
+        difficulty: true,
+        visibility: true,
+        ownerId: true,
+        startingArtistId: true,
+        startingArtistName: true,
+        startingArtistPic: true,
+      },
+    });
+    // Private challenges can still be played via direct link (anyone with the
+    // URL can try). We therefore don't gate by visibility here.
+    if (challenge) {
+      challengePreset = {
+        id: challenge.id,
+        title: challenge.title,
+        difficulty: challenge.difficulty,
+        startingArtist: {
+          id: challenge.startingArtistId,
+          name: challenge.startingArtistName,
+          pictureUrl: challenge.startingArtistPic,
+        },
+      };
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-[1200px] py-6">
       <div className="mb-7 text-center">
@@ -21,7 +59,7 @@ export default function BattleFeatSoloPage() {
         </p>
       </div>
 
-      <BattleFeatSolo />
+      <BattleFeatSolo challenge={challengePreset} />
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
         <article className="rounded-[26px] border p-5" style={{ borderColor: "#2a3242", background: "#10141d" }}>
