@@ -29,6 +29,9 @@ export const en: Dictionary = {
     signup: "Sign up",
     logout: "Log out",
     createPageSubtitle: "Pick a format to get started.",
+    openMainMenu: "Open menu",
+    closeMainMenu: "Close menu",
+    mainNavigation: "Main navigation",
   },
   sidebar: {
     tagline: "Arena of sound",

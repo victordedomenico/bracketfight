@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Menu, UserCircle2 } from "lucide-react";
+import { UserCircle2 } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { signOut, updateGuestUsername } from "@/app/(auth)/actions";
@@ -8,6 +8,7 @@ import LocaleToggle from "@/components/LocaleToggle";
 import SidebarNavLinks from "@/components/SidebarNavLinks";
 import SidebarVolumeControl from "@/components/SidebarVolumeControl";
 import { BrandMark } from "@/components/BrandLogo";
+import MobileNavDrawer from "@/components/MobileNavDrawer";
 import { getGuestIdentityFromCookies } from "@/lib/guest";
 
 type SiteSidebarProps = {
@@ -104,59 +105,32 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
 
   return (
     <>
-      <div className="sticky top-2 z-30 lg:hidden">
-        <details className="group">
-          <summary
-            className="site-sidebar flex list-none items-center justify-between rounded-2xl border px-3 py-2.5 [&::-webkit-details-marker]:hidden"
-            style={{ borderColor: "var(--border-strong)" }}
+      <MobileNavDrawer
+        theme={theme}
+        locale={locale}
+        tagline={t.sidebar.tagline}
+        ariaOpenMenu={t.nav.openMainMenu}
+        ariaCloseMenu={t.nav.closeMainMenu}
+        navigationLabel={t.nav.mainNavigation}
+      >
+        <div className="space-y-1.5">
+          <SidebarNavLinks links={topLinks} />
+          <SidebarNavLinks links={bottomLinks} />
+        </div>
+        <SidebarVolumeControl label={t.sidebar.previewVolume} />
+
+        <div className="mt-6 border-t pt-5" style={{ borderColor: "var(--border)" }}>
+          <p
+            className="mb-4 px-2 text-[0.72rem] font-bold uppercase tracking-[0.32em]"
+            style={{ color: "var(--muted)" }}
           >
-            <div className="flex min-w-0 items-center gap-3">
-              <BrandMark size={36} />
-              <div className="min-w-0">
-                <p className="truncate text-base font-black leading-none" style={{ color: "var(--foreground)" }}>
-                  MusiKlash
-                </p>
-                <p className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--muted)" }}>
-                  {t.sidebar.tagline}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle current={theme} />
-              <LocaleToggle current={locale} />
-              <span
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border"
-                style={{ borderColor: "var(--border)", background: "var(--surface-2)", color: "var(--foreground)" }}
-              >
-                <Menu size={16} />
-              </span>
-            </div>
-          </summary>
+            {t.nav.assistance}
+          </p>
+          <SidebarNavLinks links={helperLinks} />
+        </div>
 
-          <div
-            className="site-sidebar mt-2 rounded-2xl border p-3"
-            style={{ borderColor: "var(--border-strong)" }}
-          >
-            <div className="space-y-1.5">
-              <SidebarNavLinks links={topLinks} />
-              <SidebarNavLinks links={bottomLinks} />
-            </div>
-            <SidebarVolumeControl label={t.sidebar.previewVolume} />
-
-            <div className="mt-6 border-t pt-5" style={{ borderColor: "var(--border)" }}>
-              <p
-                className="mb-4 px-2 text-[0.72rem] font-bold uppercase tracking-[0.32em]"
-                style={{ color: "var(--muted)" }}
-              >
-                {t.nav.assistance}
-              </p>
-              <SidebarNavLinks links={helperLinks} />
-            </div>
-
-            {authSection}
-          </div>
-        </details>
-      </div>
+        {authSection}
+      </MobileNavDrawer>
 
       <aside className="site-sidebar hidden rounded-2xl border p-3 sm:p-4 lg:block lg:rounded-3xl lg:p-5">
         <div className="mb-6 flex items-center gap-3 px-1 lg:mb-8">

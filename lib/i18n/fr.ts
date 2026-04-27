@@ -27,6 +27,9 @@ export interface Dictionary {
     signup: string;
     logout: string;
     createPageSubtitle: string;
+    openMainMenu: string;
+    closeMainMenu: string;
+    mainNavigation: string;
   };
   sidebar: {
     tagline: string;
@@ -220,6 +223,9 @@ export const fr: Dictionary = {
     signup: "S'inscrire",
     logout: "Déconnexion",
     createPageSubtitle: "Choisis un format pour commencer.",
+    openMainMenu: "Ouvrir le menu",
+    closeMainMenu: "Fermer le menu",
+    mainNavigation: "Navigation principale",
   },
   sidebar: {
     tagline: "L'arène du son",
